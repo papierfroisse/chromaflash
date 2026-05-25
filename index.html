@@ -250,12 +250,21 @@
   </div>
 </div>
 
-<!-- LOCAL RECORDS -->
-<div class="leader-section anim-fadeUp delay-3">
-  <div class="section-title">🏆 Vos Records Personnels</div>
-  <div class="leader-board" style="padding: 0; text-align: left; overflow: hidden">
-    <div id="lb-list" style="display:flex; flex-direction:column;">
-      <!-- Populated by JS -->
+<!-- LOCAL RECORDS & PROFIL -->
+<div class="leader-section anim-fadeUp delay-3" style="display:flex; flex-wrap:wrap; gap:var(--space-xl);">
+  <div style="flex:1; min-width:300px;">
+    <div class="section-title">🏆 Vos Records Personnels</div>
+    <div class="leader-board" style="padding: 0; text-align: left; overflow: hidden">
+      <div id="lb-list" style="display:flex; flex-direction:column;">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+  
+  <div style="flex:1; min-width:300px; display:flex; flex-direction:column; align-items:center;">
+    <div class="section-title">⭐ Profil de Designer</div>
+    <div style="background:var(--bg-void); border-radius:12px; padding:20px; box-shadow:var(--shadow-inner);">
+      <canvas id="radar-canvas" width="280" height="280"></canvas>
     </div>
   </div>
 </div>
@@ -291,6 +300,7 @@
 <script type="module">
   import { initSettingsPanel, applySwatchBg, initTiltCards } from './assets/js/ui.js';
   import { getGlobalStats } from './assets/js/score.js';
+  import { drawRadarChart } from './assets/js/radar.js';
 
   // Apply saved background swatch on load
   applySwatchBg(document.body);
@@ -308,6 +318,12 @@
     const list = document.getElementById('lb-list');
     const data = getGlobalStats();
     const records = data.records || {};
+    
+    // Draw Radar Chart
+    const canvas = document.getElementById('radar-canvas');
+    if (canvas) {
+      drawRadarChart(canvas, data.profile);
+    }
     
     list.innerHTML = '';
     

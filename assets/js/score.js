@@ -155,3 +155,39 @@ export class SurvivalSession {
 export function getGlobalStats() {
   return loadData();
 }
+
+// ─── PROFILE STATS (RADAR) ───────────────────────────────────────────────────
+
+export function saveProfileStats(axis, score, maxScore) {
+  const data = loadData();
+  if (!data.profile) {
+    data.profile = {
+      color: { xp: 0, level: 1 },
+      precision: { xp: 0, level: 1 },
+      typo: { xp: 0, level: 1 },
+      rhythm: { xp: 0, level: 1 },
+      perception: { xp: 0, level: 1 }
+    };
+  }
+  
+  if (!data.profile[axis]) return;
+  
+  // Calculate XP gained based on accuracy (0 to 1)
+  const accuracy = score / maxScore;
+  let xpGained = 0;
+  if (accuracy >= 0.9) xpGained = 50;
+  else if (accuracy >= 0.7) xpGained = 30;
+  else if (accuracy >= 0.5) xpGained = 10;
+  else xpGained = 1; // Participation trophy
+  
+  data.profile[axis].xp += xpGained;
+  
+  // Level up logic (Level N requires N * 100 XP)
+  const xpRequired = data.profile[axis].level * 100;
+  if (data.profile[axis].xp >= xpRequired) {
+    data.profile[axis].level++;
+    data.profile[axis].xp -= xpRequired;
+  }
+  
+  saveData(data);
+}

@@ -257,26 +257,30 @@
     showToast, launchConfetti, playSoundForScore, copyScore,
     triggerScreenShake, triggerScreenFlash
   } from '../assets/js/ui.js';
-  import { getGlobalStats } from '../assets/js/score.js';
+  import { getGlobalStats, saveProfileStats } from '../assets/js/score.js';
 
   const settings = getSettings();
 
   // ─── MINI GAME DEFINITIONS ────────────────────────────────────
   const MINI_GAMES = [
-    { id:'spot',       name:'SPOT IT',       icon:'👁️',  maxPts: 1000, time: 8 },
-    { id:'name',       name:'NAME RUSH',     icon:'🏷️',  maxPts: 1000, time: 8 },
-    { id:'hex',        name:'HEX BLITZ',     icon:'💻',  maxPts: 1000, time: 10 },
-    { id:'snap',       name:'RGB SNAP',      icon:'🎚️',  maxPts: 1000, time: 12 },
-    { id:'warmcool',   name:'CHAUD OU FROID',icon:'🌡️',  maxPts: 1000, time: 5 },
-    { id:'complement', name:'COMPLÉMENT',    icon:'🔵',  maxPts: 1000, time: 8 },
-    { id:'dark',       name:'+ SOMBRE',      icon:'🌑',  maxPts: 1000, time: 6 },
-    { id:'match',      name:'PERFECT MATCH', icon:'🎯',  maxPts: 1000, time: 12 },
-    { id:'typo',       name:'TYPO RUSH',     icon:'🔤',  maxPts: 1000, time: 8 },
-    { id:'pixel',      name:'PIXEL PERFECT', icon:'📐',  maxPts: 1000, time: 8 },
-    { id:'carreau',    name:'LE CARREAU',    icon:'😤',  maxPts: 1000, time: 5 },
-    { id:'horloge',    name:'L\'HORLOGE',    icon:'⏱️',  maxPts: 1000, time: 6 },
-    { id:'volume',     name:'LE VOLUME',     icon:'📺',  maxPts: 1000, time: 5 },
-    { id:'cadre',      name:'LE CADRE',      icon:'🖼️',  maxPts: 1000, time: 6 },
+    { id:'spot',       name:'SPOT IT',       icon:'👁️',  maxPts: 1000, time: 8,  axis: 'color' },
+    { id:'name',       name:'NAME RUSH',     icon:'🏷️',  maxPts: 1000, time: 8,  axis: 'color' },
+    { id:'hex',        name:'HEX BLITZ',     icon:'💻',  maxPts: 1000, time: 10, axis: 'color' },
+    { id:'snap',       name:'RGB SNAP',      icon:'🎚️',  maxPts: 1000, time: 12, axis: 'color' },
+    { id:'warmcool',   name:'CHAUD OU FROID',icon:'🌡️',  maxPts: 1000, time: 5,  axis: 'color' },
+    { id:'complement', name:'COMPLÉMENT',    icon:'🔵',  maxPts: 1000, time: 8,  axis: 'color' },
+    { id:'dark',       name:'+ SOMBRE',      icon:'🌑',  maxPts: 1000, time: 6,  axis: 'color' },
+    { id:'match',      name:'PERFECT MATCH', icon:'🎯',  maxPts: 1000, time: 12, axis: 'color' },
+    { id:'typo',       name:'TYPO RUSH',     icon:'🔤',  maxPts: 1000, time: 8,  axis: 'typo' },
+    { id:'pixel',      name:'PIXEL PERFECT', icon:'📐',  maxPts: 1000, time: 8,  axis: 'precision' },
+    { id:'carreau',    name:'LE CARREAU',    icon:'😤',  maxPts: 1000, time: 5,  axis: 'perception' },
+    { id:'horloge',    name:'L\'HORLOGE',    icon:'⏱️',  maxPts: 1000, time: 6,  axis: 'perception' },
+    { id:'volume',     name:'LE VOLUME',     icon:'📺',  maxPts: 1000, time: 5,  axis: 'rhythm' },
+    { id:'cadre',      name:'LE CADRE',      icon:'🖼️',  maxPts: 1000, time: 6,  axis: 'precision' },
+    { id:'crenage',    name:'LE CRÉNAGE',    icon:'🆎',  maxPts: 1000, time: 8,  axis: 'typo' },
+    { id:'padding',    name:'LA MARGE',      icon:'📦',  maxPts: 1000, time: 8,  axis: 'precision' },
+    { id:'contraste',  name:'LE CONTRASTE',  icon:'👁️',  maxPts: 1000, time: 8,  axis: 'color' },
+    { id:'ratio',      name:'LE RATIO',      icon:'📐',  maxPts: 1000, time: 8,  axis: 'perception' },
   ];
 
   // Pre-load Typo Fonts
@@ -361,6 +365,10 @@
       horloge:    buildHorloge,
       volume:     buildVolume,
       cadre:      buildCadre,
+      crenage:    buildCrenage,
+      padding:    buildPadding,
+      contraste:  buildContraste,
+      ratio:      buildRatio,
     };
     builders[mg.id](mg, time);
 
@@ -399,6 +407,7 @@
     totalPts += score;
     animateCounter(totalPtsEl, totalPts - score, totalPts, 400);
     playSoundForScore(score, MINI_GAMES[mgIndex].maxPts);
+    saveProfileStats(MINI_GAMES[mgIndex].axis, score, MINI_GAMES[mgIndex].maxPts);
     mgIndex++;
 
     setTimeout(() => {
@@ -1371,7 +1380,229 @@
     setTimeout(() => { document.removeEventListener('keydown', keyHandler); }, time * 1000 + 1000);
   }
 
+  // ─── MINI-GAME 15: LE CRÉNAGE ──────────────────────────────────
+  function buildCrenage(mg, time) {
+    const pairs = ['AV', 'WA', 'To', 'Te', 'LY', 'TA', 'VA'];
+    const pair = pairs[Math.floor(Math.random() * pairs.length)];
+    const optimalSpacing = -2; // let's say -2px is visually good
+    // Start way off
+    let currentSpacing = Math.random() > 0.5 ? Math.floor(Math.random() * 5 + 10) : Math.floor(Math.random() * -10 - 5);
+    const font = TYPO_FONTS[Math.floor(Math.random() * TYPO_FONTS.length)].family;
+
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-md">Ajuste l'espacement pour que ce soit <strong>parfait</strong>.</p>
+      
+      <div style="font-family:'${font}', sans-serif; font-size:6rem; line-height:1; display:flex; justify-content:center; align-items:center; height:120px; border:1px dashed var(--bg-border); margin-bottom:var(--space-md); position:relative; overflow:hidden">
+        <span id="crenage-l1">${pair[0]}</span>
+        <span id="crenage-l2" style="margin-left:${currentSpacing}px">${pair[1]}</span>
+      </div>
+
+      <div class="flex gap-sm w-full">
+        <button class="btn btn-ghost flex-1" id="crenage-minus">← Raprocher</button>
+        <button class="btn btn-ghost flex-1" id="crenage-plus">Écarter →</button>
+      </div>
+      <button class="btn btn-primary w-full mt-sm" id="crenage-val">C'est parfait</button>
+    `;
+    gameArea.appendChild(card);
+
+    const l2 = document.getElementById('crenage-l2');
+    
+    function update() {
+      l2.style.marginLeft = currentSpacing + 'px';
+    }
+
+    document.getElementById('crenage-minus').addEventListener('click', () => { currentSpacing -= 1; update(); });
+    document.getElementById('crenage-plus').addEventListener('click', () => { currentSpacing += 1; update(); });
+
+    const keyHandler = (e) => {
+      if (!canAnswer) return;
+      if (e.key === 'ArrowLeft') { currentSpacing -= 1; update(); }
+      if (e.key === 'ArrowRight') { currentSpacing += 1; update(); }
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); validate(); }
+    };
+    document.addEventListener('keydown', keyHandler);
+
+    function validate() {
+      if (!canAnswer) return;
+      canAnswer = false;
+      const diff = Math.abs(currentSpacing - optimalSpacing);
+      if (diff <= 2) {
+        Sound.good();
+        onMiniGameEnd(mg.maxPts);
+      } else {
+        Sound.wrong();
+        onMiniGameEnd(Math.max(0, mg.maxPts - diff * 100));
+      }
+    }
+    document.getElementById('crenage-val').addEventListener('click', validate);
+    setTimeout(() => { document.removeEventListener('keydown', keyHandler); }, time * 1000 + 1000);
+  }
+
+  // ─── MINI-GAME 16: LA MARGE (Padding) ─────────────────────────
+  function buildPadding(mg, time) {
+    const targetPadding = Math.floor(Math.random() * 10 + 20); // 20 to 30
+    let userPadding = Math.random() > 0.5 ? targetPadding + 15 : Math.max(0, targetPadding - 15);
+
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-md">Équilibre la marge <strong>basse</strong> pour qu'elle soit identique à la haute.</p>
+      
+      <div style="display:flex; justify-content:center; align-items:center; height:180px; border:1px dashed var(--bg-border); margin-bottom:var(--space-md); position:relative; overflow:hidden">
+        <div id="padding-btn" style="background:var(--accent); color:#000; font-weight:700; border-radius:8px; padding-left:30px; padding-right:30px; padding-top:${targetPadding}px; padding-bottom:${userPadding}px; transition: padding 0.1s;">
+          CLIQUE MOI
+        </div>
+      </div>
+
+      <input type="range" class="input w-full" id="padding-slider" min="0" max="60" value="${userPadding}">
+      <button class="btn btn-primary w-full mt-sm" id="padding-val">Valider</button>
+    `;
+    gameArea.appendChild(card);
+
+    const btn = document.getElementById('padding-btn');
+    const slider = document.getElementById('padding-slider');
+
+    slider.addEventListener('input', (e) => {
+      userPadding = parseInt(e.target.value);
+      btn.style.paddingBottom = userPadding + 'px';
+    });
+
+    document.getElementById('padding-val').addEventListener('click', () => {
+      if (!canAnswer) return;
+      canAnswer = false;
+      const diff = Math.abs(userPadding - targetPadding);
+      if (diff <= 2) {
+        Sound.good();
+        onMiniGameEnd(mg.maxPts);
+      } else {
+        Sound.wrong();
+        onMiniGameEnd(0);
+      }
+    });
+  }
+
+  // ─── MINI-GAME 17: LE CONTRASTE (WCAG) ────────────────────────
+  function buildContraste(mg, time) {
+    // Generate a background, let's say mid-gray
+    const bgL = Math.floor(Math.random() * 20 + 40); // 40-60% lightness
+    let userL = bgL; // Start invisible!
+
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-md">Ajuste la clarté du texte pour qu'il soit <strong>lisible</strong> mais sans abuser !</p>
+      
+      <div style="display:flex; justify-content:center; align-items:center; height:120px; background:hsl(0,0%,${bgL}%); border-radius:var(--radius-md); margin-bottom:var(--space-md);">
+        <span id="contraste-text" style="color:hsl(0,0%,${userL}%); font-weight:700; font-size:1.5rem;">Accessibilité</span>
+      </div>
+
+      <input type="range" class="input w-full" id="contraste-slider" min="0" max="100" value="${userL}">
+      <button class="btn btn-primary w-full mt-sm" id="contraste-val">Lisible !</button>
+    `;
+    gameArea.appendChild(card);
+
+    const textEl = document.getElementById('contraste-text');
+    const slider = document.getElementById('contraste-slider');
+
+    slider.addEventListener('input', (e) => {
+      userL = parseInt(e.target.value);
+      textEl.style.color = \`hsl(0,0%,\${userL}%)\`;
+    });
+
+    document.getElementById('contraste-val').addEventListener('click', () => {
+      if (!canAnswer) return;
+      canAnswer = false;
+      // Ideal contrast distance: WCAG AA is ~ 4.5 ratio. In lightness it's about 40-50% difference.
+      const diffL = Math.abs(userL - bgL);
+      if (diffL >= 40 && diffL <= 60) {
+        Sound.good();
+        onMiniGameEnd(mg.maxPts);
+      } else {
+        Sound.wrong();
+        onMiniGameEnd(0);
+      }
+    });
+  }
+
+  // ─── MINI-GAME 18: LE RATIO ───────────────────────────────────
+  function buildRatio(mg, time) {
+    const ratios = [
+      { name: '16:9', w: 160, h: 90 },
+      { name: '4:3',  w: 120, h: 90 },
+      { name: '1:1',  w: 100, h: 100 },
+      { name: '3:2',  w: 150, h: 100 },
+      { name: '21:9', w: 210, h: 90 }
+    ];
+    
+    // Pick 3 options to display
+    const shuffled = [...ratios].sort(() => 0.5 - Math.random());
+    const options = shuffled.slice(0, 3);
+    const correct = options[Math.floor(Math.random() * options.length)];
+
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-md">Quel est le ratio de ce rectangle ?</p>
+      
+      <div style="display:flex; justify-content:center; align-items:center; height:180px; margin-bottom:var(--space-md);">
+        <div style="width:${correct.w}px; height:${correct.h}px; background:var(--accent); border-radius:4px;"></div>
+      </div>
+
+      <div class="spot-grid" id="ratio-choices" style="grid-template-columns: repeat(3, 1fr);"></div>
+    `;
+    gameArea.appendChild(card);
+
+    const container = document.getElementById('ratio-choices');
+    options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = opt.name;
+      btn.style.fontFamily = 'Space Mono, monospace';
+      btn.addEventListener('click', () => {
+        if (!canAnswer) return;
+        canAnswer = false;
+        if (opt.name === correct.name) {
+          btn.classList.add('correct');
+          Sound.good();
+          onMiniGameEnd(mg.maxPts);
+        } else {
+          btn.classList.add('wrong');
+          Sound.wrong();
+          onMiniGameEnd(0);
+        }
+      });
+      container.appendChild(btn);
+    });
+  }
+
   // ─── START ────────────────────────────────────────────────────
+
   startGame();
 </script>
 </body>
