@@ -281,6 +281,7 @@
     { id:'padding',    name:'LA MARGE',      icon:'📦',  maxPts: 1000, time: 8,  axis: 'precision' },
     { id:'contraste',  name:'LE CONTRASTE',  icon:'👁️',  maxPts: 1000, time: 8,  axis: 'color' },
     { id:'ratio',      name:'LE RATIO',      icon:'📐',  maxPts: 1000, time: 8,  axis: 'perception' },
+    { id:'saut',       name:'LE GRAND SAUT', icon:'🍄',  maxPts: 1000, time: 15, axis: 'rhythm' },
   ];
 
   // Pre-load Typo Fonts
@@ -369,6 +370,7 @@
       padding:    buildPadding,
       contraste:  buildContraste,
       ratio:      buildRatio,
+      saut:       buildSaut,
     };
     builders[mg.id](mg, time);
 
@@ -1600,6 +1602,206 @@
       });
       container.appendChild(btn);
     });
+  }
+
+  // ─── MINI-GAME 19: LE GRAND SAUT (NIVEAU LONG) ───────────────────
+  function buildSaut(mg, time) {
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-md">Niveau Bonus ! Souffle un peu, esquive les obstacles et rejoins le drapeau.</p>
+      
+      <div style="position:relative; width:100%; height:200px; overflow:hidden; background:#87CEEB; border-radius:8px; border:2px solid var(--bg-border); margin-bottom:var(--space-md);">
+        <div id="saut-world" style="position:absolute; top:0; left:0; width:4000px; height:100%;">
+          <!-- Floor 1 -->
+          <div style="position:absolute; bottom:0; left:0; width:800px; height:40px; background:#8B4513; border-top:4px solid #228B22;"></div>
+          <!-- Pipe 1 -->
+          <div class="obstacle" data-type="pipe" data-x="400" data-w="40" style="position:absolute; bottom:40px; left:400px; width:40px; height:60px; background:#228B22; border:2px solid #000; border-radius:4px 4px 0 0;"></div>
+          
+          <!-- Floor 2 (After Gap 1) -->
+          <div style="position:absolute; bottom:0; left:950px; width:800px; height:40px; background:#8B4513; border-top:4px solid #228B22;"></div>
+          
+          <!-- Pipe 2 -->
+          <div class="obstacle" data-type="pipe" data-x="1300" data-w="40" style="position:absolute; bottom:40px; left:1300px; width:40px; height:80px; background:#228B22; border:2px solid #000; border-radius:4px 4px 0 0;"></div>
+
+          <!-- Floor 3 (After Gap 2) -->
+          <div style="position:absolute; bottom:0; left:1900px; width:1000px; height:40px; background:#8B4513; border-top:4px solid #228B22;"></div>
+          
+          <!-- Flag -->
+          <div style="position:absolute; bottom:40px; left:2500px; width:4px; height:100px; background:#E5E7EB;">
+            <div style="position:absolute; top:0; right:0; width:30px; height:20px; background:#F87171;"></div>
+          </div>
+        </div>
+        <!-- Player -->
+        <div id="saut-player" style="position:absolute; bottom:40px; left:50px; width:30px; height:30px; background:#E52521; border-radius:4px; border:2px solid #000; z-index:10;">
+          <div style="position:absolute; top:4px; right:4px; width:6px; height:6px; background:#fff; border-radius:50%;"></div>
+        </div>
+      </div>
+      
+      <button class="btn btn-primary w-full mt-sm" id="saut-btn">SAUTER (Espace)</button>
+    `;
+    gameArea.appendChild(card);
+
+    let playerY = 40;
+    let playerVy = 0;
+    const gravity = 0.9;
+    const jumpStrength = 15;
+    let isJumping = false;
+    let scrollX = 0;
+    const speed = 5; // Un peu plus lent pour apprécier
+    let rafId;
+    let gameState = 'playing';
+
+    const player = document.getElementById('saut-player');
+    const world = document.getElementById('saut-world');
+
+    // Définition des trous (gaps)
+    const gaps = [
+      { start: 800, end: 950 },
+      { start: 1750, end: 1900 }
+    ];
+
+    // Définition des obstacles (tuyaux)
+    const obstacles = [
+      { x: 400, w: 40, h: 60 },
+      { x: 1300, w: 40, h: 80 }
+    ];
+
+    function jump() {
+      if (!isJumping && gameState === 'playing' && canAnswer) {
+        isJumping = true;
+        playerVy = jumpStrength;
+        Sound.swoosh();
+      }
+    }
+
+    document.getElementById('saut-btn').addEventListener('click', jump);
+    const keyHandler = (e) => {
+      if (!canAnswer) return;
+      if (e.key === ' ' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        jump();
+      }
+    };
+    document.addEventListener('keydown', keyHandler);
+
+    function loop() {
+      if (!canAnswer) return;
+
+      if (gameState === 'playing') {
+        scrollX += speed;
+        world.style.transform = \`translateX(\${-scrollX}px)\`;
+
+        const pStart = 50 + scrollX;
+        const pEnd = 80 + scrollX;
+
+        // Collision Obstacles (Pipes)
+        for (let obs of obstacles) {
+          if (pEnd > obs.x && pStart < obs.x + obs.w) {
+            if (playerY < 40 + obs.h) {
+              gameState = 'lose'; // Hit the pipe
+            } else if (playerVy < 0 && playerY <= 40 + obs.h) {
+              // Landed ON the pipe
+              playerY = 40 + obs.h;
+              playerVy = 0;
+              isJumping = false;
+            }
+          }
+        }
+
+        // Physique Gravité
+        if (isJumping) {
+          playerY += playerVy;
+          playerVy -= gravity;
+          
+          // Vérifier si atterrissage sur le sol normal
+          let onFloor = true;
+          for (let g of gaps) {
+            if (pStart > g.start && pEnd < g.end) onFloor = false;
+          }
+          
+          // Si on descend en dessous du niveau du sol (40)
+          if (playerY <= 40) {
+            if (onFloor) {
+              // Vérifier si on n'atterrit pas dans un mur de tuyau
+              let hitWall = false;
+              for (let obs of obstacles) {
+                if (pEnd > obs.x && pStart < obs.x + obs.w) hitWall = true;
+              }
+              if (hitWall) {
+                gameState = 'lose';
+              } else {
+                playerY = 40;
+                playerVy = 0;
+                isJumping = false;
+              }
+            } else {
+              gameState = 'lose'; // Tombé dans un trou
+            }
+          }
+        } else {
+          // Si on court sur le sol, vérifier si on tombe dans un trou
+          let onFloor = true;
+          let onPipe = false;
+          for (let g of gaps) {
+            if (pStart > g.start && pEnd < g.end) onFloor = false;
+          }
+          for (let obs of obstacles) {
+            if (pEnd > obs.x && pStart < obs.x + obs.w && playerY >= 40 + obs.h) onPipe = true;
+          }
+          
+          if (!onFloor && !onPipe && playerY === 40) {
+            gameState = 'lose';
+            playerVy = -5; // commence à tomber
+            isJumping = true;
+          } else if (!onPipe && playerY > 40) {
+             // est tombé du tuyau
+             isJumping = true;
+          }
+        }
+
+        player.style.bottom = playerY + 'px';
+
+        // Check Flag Collision
+        if (pEnd >= 2500 && playerY >= 40) {
+          gameState = 'win';
+        }
+
+      } else if (gameState === 'lose') {
+        playerY += playerVy;
+        playerVy -= gravity;
+        player.style.bottom = playerY + 'px';
+        if (playerY < -50) {
+          canAnswer = false;
+          cancelAnimationFrame(rafId);
+          Sound.wrong();
+          onMiniGameEnd(0);
+          return;
+        }
+      } else if (gameState === 'win') {
+        canAnswer = false;
+        cancelAnimationFrame(rafId);
+        triggerScreenFlash();
+        Sound.good();
+        onMiniGameEnd(mg.maxPts);
+        return;
+      }
+
+      rafId = requestAnimationFrame(loop);
+    }
+
+    rafId = requestAnimationFrame(loop);
+
+    setTimeout(() => {
+      document.removeEventListener('keydown', keyHandler);
+      cancelAnimationFrame(rafId);
+    }, time * 1000 + 1000);
   }
 
   // ─── START ────────────────────────────────────────────────────
