@@ -3,41 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ChromaFlash — Le Test Colorimétrique pour Graphistes</title>
-  <meta name="description" content="Testez votre perception des couleurs : mode Flash WarioWare, Classic GeoGuessr, Expert et Survie. Le défi colorimétrique ultime pour les graphistes.">
+  <title>ChromaFlash — L'Enfer du Perfectionniste</title>
+  <meta name="description" content="Testez votre perception et vos TOCs : Mega Mode WarioWare, Entraînement Chill et défis impossibles.">
   <link rel="stylesheet" href="css/design.css">
   <link rel="stylesheet" href="css/animations.css">
   <style>
-    body { padding-top: 60px; }
+    body { 
+      padding-top: 60px; 
+      /* Funky animated background for the new vibe */
+      background: radial-gradient(circle at 50% 0%, var(--bg-card), var(--bg-void));
+    }
 
     .hero {
       text-align: center;
-      padding: var(--space-xl) var(--space-lg) var(--space-lg);
+      padding: var(--space-2xl) var(--space-lg) var(--space-xl);
     }
-    .hero-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      background: var(--accent-dim);
-      border: 1px solid var(--accent-glow);
-      border-radius: var(--radius-full);
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--accent);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin-bottom: var(--space-lg);
-    }
+    
     .hero-title {
-      font-size: clamp(2.5rem, 8vw, 4rem);
-      font-weight: 700;
-      line-height: 1.05;
-      letter-spacing: -0.03em;
-      margin-bottom: var(--space-md);
+      font-size: clamp(3rem, 10vw, 5rem);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      margin-bottom: var(--space-sm);
+      text-transform: uppercase;
     }
     .hero-title span {
-      background: linear-gradient(135deg, #FF6B6B, #FF9F1C, #FFE66D, #6BCB77, #4D96FF, #B388FF);
+      background: linear-gradient(135deg, #FF6B6B, #FBBF24, #34D399, #4D96FF, #A78BFA);
       background-clip: text;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -45,143 +36,133 @@
       animation: shimmer 3s linear infinite;
     }
     .hero-sub {
-      font-size: 1.0625rem;
+      font-size: 1.1rem;
       color: var(--text-secondary);
-      max-width: 420px;
+      max-width: 500px;
       margin: 0 auto var(--space-xl);
-      line-height: 1.6;
+      line-height: 1.5;
     }
 
-    /* Difficulty selector */
-    .diff-selector {
-      display: inline-flex;
+    /* MEGA MODE CTA */
+    .mega-mode-container {
+      max-width: 700px;
+      margin: 0 auto var(--space-2xl);
+      padding: 0 var(--space-lg);
+    }
+    .mega-btn {
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: var(--space-sm);
-      background: var(--bg-card);
-      border: 1px solid var(--bg-border);
-      border-radius: var(--radius-full);
-      padding: 6px;
-      margin-bottom: var(--space-xl);
+      justify-content: center;
+      width: 100%;
+      background: linear-gradient(135deg, #FF6B6B, #F87171);
+      border-radius: var(--radius-xl);
+      padding: var(--space-2xl) var(--space-lg);
+      text-decoration: none;
+      color: white;
+      box-shadow: 0 15px 35px rgba(255, 107, 107, 0.4), inset 0 2px 0 rgba(255,255,255,0.3);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
     }
-    .diff-btn {
-      padding: 8px 20px;
-      border-radius: var(--radius-full);
-      font-size: 0.875rem;
+    .mega-btn:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 20px 45px rgba(255, 107, 107, 0.5), inset 0 2px 0 rgba(255,255,255,0.4);
+    }
+    .mega-btn:active { transform: translateY(2px) scale(0.98); }
+    
+    .mega-title {
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      margin-bottom: 8px;
+    }
+    .mega-sub {
+      font-size: 1.1rem;
       font-weight: 600;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all 0.2s;
-      border: none;
-      background: none;
-      font-family: inherit;
+      opacity: 0.9;
     }
-    .diff-btn.active {
-      background: var(--accent);
-      color: #fff;
+    .mega-icon {
+      font-size: 4rem;
+      margin-bottom: 12px;
+      animation: float 3s ease-in-out infinite;
     }
-    .diff-btn:not(.active):hover { color: var(--text-primary); }
-
-    /* Modes grid */
-    .modes-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--space-md);
-      padding: 0 var(--space-lg) var(--space-xl);
-      max-width: 700px;
-      margin: 0 auto;
-    }
-    @media (max-width: 500px) {
-      .modes-grid { grid-template-columns: 1fr; }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
     }
 
-    .mode-card[data-mode="flash"]   { --mode-color: #FF6B6B; --mode-color-dim: rgba(255,107,107,0.12); }
-    .mode-card[data-mode="classic"] { --mode-color: #4D96FF; --mode-color-dim: rgba(77,150,255,0.12); }
-    .mode-card[data-mode="expert"]  { --mode-color: #34D399; --mode-color-dim: rgba(52,211,153,0.12); }
-    .mode-card[data-mode="survie"]  { --mode-color: #F87171; --mode-color-dim: rgba(248,113,113,0.12); }
-    .mode-card[data-mode="daily"]   { --mode-color: #FFE66D; --mode-color-dim: rgba(255,230,109,0.12); grid-column: 1 / -1; }
-    .mode-card[data-mode="typo"]    { --mode-color: #B388FF; --mode-color-dim: rgba(179,136,255,0.12); }
-    .mode-card[data-mode="pixel"]   { --mode-color: #F472B6; --mode-color-dim: rgba(244,114,182,0.12); }
-    .mode-card[data-mode="carreau"] { --mode-color: #A78BFA; --mode-color-dim: rgba(167,139,250,0.12); }
-    .mode-card[data-mode="horloge"] { --mode-color: #FBBF24; --mode-color-dim: rgba(251,191,36,0.12); }
-
-    .mode-card-inner {
-      position: relative;
-      z-index: 1;
-    }
-
-    /* Records section */
-    .records-section {
-      max-width: 700px;
-      margin: 0 auto;
-      padding: 0 var(--space-lg) var(--space-xl);
-    }
-    .records-title {
-      font-size: 0.75rem;
-      font-weight: 700;
+    /* CHILL GRID */
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--text-muted);
+      letter-spacing: 0.05em;
       margin-bottom: var(--space-md);
-    }
-    .records-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: var(--space-sm);
-    }
-    .record-card {
-      background: var(--bg-card);
-      border: 1px solid var(--bg-border);
-      border-radius: var(--radius-md);
-      padding: var(--space-md);
-    }
-    .record-mode { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; }
-    .record-score { font-family: 'Space Mono', monospace; font-size: 1.125rem; font-weight: 700; }
-    .record-rank { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
-
-    /* Settings toggle */
-    .toggle-switch {
-      position: relative;
-      width: 44px; height: 24px;
-    }
-    .toggle-switch input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider {
-      position: absolute; inset: 0;
-      background: var(--bg-input);
-      border-radius: 999px;
-      border: 1px solid var(--bg-border);
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .toggle-slider::before {
-      content: '';
-      position: absolute;
-      width: 18px; height: 18px;
-      top: 2px; left: 2px;
-      background: white;
-      border-radius: 50%;
-      transition: transform 0.2s;
-    }
-    .toggle-switch input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
-    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
-
-    .settings-row {
+      color: var(--text-primary);
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      margin-bottom: var(--space-md);
+      gap: 12px;
     }
-    .settings-row-label {
-      font-size: 0.9375rem;
-      font-weight: 500;
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 2px;
+      background: var(--bg-border);
+      border-radius: 2px;
     }
-    .settings-section-title {
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--text-muted);
-      margin-bottom: var(--space-md);
+
+    .chill-section {
+      max-width: 900px;
+      margin: 0 auto var(--space-2xl);
+      padding: 0 var(--space-lg);
     }
+
+    .modes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: var(--space-md);
+    }
+    
+    /* Smaller cards for Chill mode */
+    .chill-card {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .chill-card:hover {
+      background: var(--bg-input);
+      border-color: var(--text-muted);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+    }
+    .chill-icon { font-size: 2rem; }
+    .chill-name { font-weight: 700; font-size: 1rem; }
+    .chill-desc { font-size: 0.8rem; color: var(--text-secondary); }
+
+    /* LEADERBOARD SECTION */
+    .leader-section {
+      max-width: 900px;
+      margin: 0 auto var(--space-2xl);
+      padding: 0 var(--space-lg);
+    }
+    .leader-board {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-border);
+      border-radius: var(--radius-xl);
+      padding: var(--space-xl);
+      text-align: center;
+    }
+
   </style>
 </head>
 <body>
@@ -190,199 +171,100 @@
 <header class="game-header">
   <span class="logo-text">ChromaFlash</span>
   <div class="flex gap-sm items-center">
-    <button class="btn-icon" id="settings-btn" title="Paramètres" aria-label="Paramètres">⚙️</button>
+    <button class="btn-icon" id="settings-btn" title="Paramètres">⚙️</button>
   </div>
 </header>
 
 <!-- HERO -->
 <div class="hero anim-fadeUp">
-  <div class="hero-tag">🎨 Test colorimétrique</div>
-  <h1 class="hero-title">Combien <span>voyez-vous</span><br>de couleurs ?</h1>
-  <p class="hero-sub">Le défi de perception chromatique pour graphistes. Quatre modes, une seule règle : soyez précis.</p>
+  <h1 class="hero-title">Perfection & <span>Frustration</span></h1>
+  <p class="hero-sub">Le test ultime de perception et de précision. Prouvez que votre œil est infaillible.</p>
+</div>
 
-  <!-- Difficulté -->
-  <div class="diff-selector" id="diff-selector">
-    <button class="diff-btn" data-diff="easy">🟢 Débutant</button>
-    <button class="diff-btn active" data-diff="normal">🟡 Normal</button>
-    <button class="diff-btn" data-diff="hard">🔴 Graphiste</button>
+<!-- MEGA MODE CTA -->
+<div class="mega-mode-container anim-scaleIn delay-1">
+  <a href="flash.html" class="mega-btn">
+    <div class="mega-icon">🔥</div>
+    <div class="mega-title">MEGA MODE</div>
+    <div class="mega-sub">Tous les jeux • Rapidité folle • 3 Vies</div>
+  </a>
+</div>
+
+<!-- CHILL / TRAINING MODE -->
+<div class="chill-section anim-fadeUp delay-2">
+  <div class="section-title">☕ Mode Entraînement</div>
+  <p class="text-secondary mb-lg">Travaillez vos fixations à votre rythme. Pas de pression, juste de la perfection.</p>
+  
+  <div class="modes-grid">
+    <a href="daily.html" class="chill-card">
+      <span class="chill-icon">📅</span>
+      <span class="chill-name">Daily Challenge</span>
+      <span class="chill-desc">La couleur du jour. 1 essai.</span>
+    </a>
+    <a href="classic.html" class="chill-card">
+      <span class="chill-icon">🎨</span>
+      <span class="chill-name">Couleur Classic</span>
+      <span class="chill-desc">Style GeoGuessr sur 5 rondes.</span>
+    </a>
+    <a href="typo.html" class="chill-card">
+      <span class="chill-icon">🔤</span>
+      <span class="chill-name">Typo Rush</span>
+      <span class="chill-desc">Anatomie de la lettre.</span>
+    </a>
+    <a href="pixel.html" class="chill-card">
+      <span class="chill-icon">📐</span>
+      <span class="chill-name">Pixel Perfect</span>
+      <span class="chill-desc">Centre le carré parfaitement.</span>
+    </a>
+    <a href="carreau.html" class="chill-card">
+      <span class="chill-icon">😤</span>
+      <span class="chill-name">Le Carreau</span>
+      <span class="chill-desc">Trouve l'anomalie dans la grille.</span>
+    </a>
+    <a href="horloge.html" class="chill-card">
+      <span class="chill-icon">⏱️</span>
+      <span class="chill-name">L'Horloge</span>
+      <span class="chill-desc">Ajuste la trotteuse au millimètre.</span>
+    </a>
+    <a href="survie.html" class="chill-card">
+      <span class="chill-icon">💀</span>
+      <span class="chill-name">Survie Couleur</span>
+      <span class="chill-desc">Combien de temps tiendras-tu ?</span>
+    </a>
+    <a href="expert.html" class="chill-card">
+      <span class="chill-icon">🔬</span>
+      <span class="chill-name">Expert</span>
+      <span class="chill-desc">Aucune aide. Précision absolue.</span>
+    </a>
   </div>
 </div>
 
-<!-- MODES GRID -->
-
-<!-- CATEGORY: COULEUR -->
-<div class="category-header anim-fadeUp" style="max-width: 700px; margin: 0 auto var(--space-md); padding: 0 var(--space-lg);">
-  <h2 class="text-xl weight-700">🎨 Couleur</h2>
-  <p class="text-sm text-secondary">Maîtrise les espaces colorimétriques (RGB, HEX, HSL)</p>
-</div>
-
-<div class="modes-grid mb-2xl">
-  <a href="daily.html" class="mode-card anim-fadeUp delay-1" data-mode="daily" id="card-daily">
-    <div class="mode-card-inner">
-      <span class="mode-icon">📅</span>
-      <div class="mode-title">DAILY CHALLENGE</div>
-      <div class="mode-sub">1 couleur · 1 essai par jour</div>
-      <div class="mode-pills">
-        <span class="mode-pill" style="color:#111; background:var(--mode-color)">Nouveau !</span>
-        <span class="mode-pill">Partageable</span>
-        <span class="mode-pill">ΔE exact</span>
-      </div>
-    </div>
-  </a>
-
-  <a href="classic.html" class="mode-card anim-fadeUp delay-2" data-mode="classic" id="card-classic">
-    <div class="mode-card-inner">
-      <span class="mode-icon">🎯</span>
-      <div class="mode-title">CLASSIC</div>
-      <div class="mode-sub">5 rondes · Style GeoGuessr</div>
-      <div class="mode-pills">
-        <span class="mode-pill">Précision</span>
-        <span class="mode-pill">Révélé</span>
-        <span class="mode-pill">5 000 pts</span>
-      </div>
-    </div>
-  </a>
-
-  <a href="flash.html" class="mode-card anim-fadeUp delay-3" data-mode="flash" id="card-flash">
-    <div class="mode-card-inner">
-      <span class="mode-icon">⚡</span>
-      <div class="mode-title">FLASH</div>
-      <div class="mode-sub">8 mini-jeux · Style WarioWare</div>
-      <div class="mode-pills">
-        <span class="mode-pill">Rapidité</span>
-        <span class="mode-pill">Instinct</span>
-        <span class="mode-pill">Rang S</span>
-      </div>
-    </div>
-  </a>
-
-  <a href="expert.html" class="mode-card anim-fadeUp delay-4" data-mode="expert" id="card-expert">
-    <div class="mode-card-inner">
-      <span class="mode-icon">🔬</span>
-      <div class="mode-title">EXPERT</div>
-      <div class="mode-sub">3 rondes · Précision absolue</div>
-      <div class="mode-pills">
-        <span class="mode-pill">Pas de chrono</span>
-        <span class="mode-pill">ΔE live</span>
-        <span class="mode-pill">Hall of Fame</span>
-      </div>
-    </div>
-  </a>
-
-  <a href="survie.html" class="mode-card anim-fadeUp delay-5" data-mode="survie" id="card-survie">
-    <div class="mode-card-inner">
-      <span class="mode-icon">💀</span>
-      <div class="mode-title">SURVIE</div>
-      <div class="mode-sub">Infini · Roguelite</div>
-      <div class="mode-pills">
-        <span class="mode-pill">3 vies</span>
-        <span class="mode-pill">Niveaux</span>
-        <span class="mode-pill">Événements</span>
-      </div>
-    </div>
-  </a>
-</div>
-
-<!-- CATEGORY: TYPOGRAPHIE -->
-<div class="category-header anim-fadeUp delay-5" style="max-width: 700px; margin: 0 auto var(--space-md); padding: 0 var(--space-lg);">
-  <h2 class="text-xl weight-700">🔤 Typographie</h2>
-  <p class="text-sm text-secondary">Reconnaissance de polices et anatomie de la lettre</p>
-</div>
-
-<div class="modes-grid mb-2xl">
-  <a href="typo.html" class="mode-card anim-fadeUp delay-6" data-mode="typo" id="card-typo">
-    <div class="mode-card-inner">
-      <span class="mode-icon">🔤</span>
-      <div class="mode-title">TYPO RUSH</div>
-      <div class="mode-sub">Reconnaissance Typographique</div>
-      <div class="mode-pills">
-        <span class="mode-pill">Bonus</span>
-        <span class="mode-pill">10 Polices</span>
-        <span class="mode-pill">Sans/Serif</span>
-      </div>
-    </div>
-  </a>
-</div>
-
-<!-- CATEGORY: COMPOSITION -->
-<div class="category-header anim-fadeUp delay-7" style="max-width: 700px; margin: 0 auto var(--space-md); padding: 0 var(--space-lg);">
-  <h2 class="text-xl weight-700">📐 Composition</h2>
-  <p class="text-sm text-secondary">Aiguise ton œil pour l'alignement et les grilles</p>
-</div>
-
-<div class="modes-grid mb-2xl">
-  <a href="pixel.html" class="mode-card anim-fadeUp delay-8" data-mode="pixel" id="card-pixel">
-    <div class="mode-card-inner">
-      <span class="mode-icon">📐</span>
-      <div class="mode-title">PIXEL PERFECT</div>
-      <div class="mode-sub">L'enfer du centrage div</div>
-      <div class="mode-pills">
-        <span class="mode-pill" style="color:#111; background:var(--mode-color)">Nouveau !</span>
-        <span class="mode-pill">Delta P</span>
-        <span class="mode-pill">5 Rondes</span>
-      </div>
-    </div>
-  </a>
-</div>
-
-<!-- CATEGORY: FRUSTRATION & ORDRE -->
-<div class="category-header anim-fadeUp delay-9" style="max-width: 700px; margin: 0 auto var(--space-md); padding: 0 var(--space-lg);">
-  <h2 class="text-xl weight-700">😤 Frustration & Ordre</h2>
-  <p class="text-sm text-secondary">La perfection est une obsession. Es-tu prêt à vriller ?</p>
-</div>
-
-<div class="modes-grid mb-2xl">
-  <a href="carreau.html" class="mode-card anim-fadeUp delay-10" data-mode="carreau" id="card-carreau">
-    <div class="mode-card-inner">
-      <span class="mode-icon">😤</span>
-      <div class="mode-title">LE CARREAU MAL CALLÉ</div>
-      <div class="mode-sub">WarioWare pour perfectionnistes</div>
-      <div class="mode-pills">
-        <span class="mode-pill" style="color:#111; background:#F87171">Nouveau !</span>
-        <span class="mode-pill">Stress</span>
-        <span class="mode-pill">3 Vies</span>
-      </div>
-    </div>
-  </a>
-  
-  <a href="horloge.html" class="mode-card anim-fadeUp delay-11" data-mode="horloge" id="card-horloge">
-    <div class="mode-card-inner">
-      <span class="mode-icon">⏱️</span>
-      <div class="mode-title">L'HORLOGE MAL RÉGLÉE</div>
-      <div class="mode-sub">Ajuste à la micro-seconde</div>
-      <div class="mode-pills">
-        <span class="mode-pill" style="color:#111; background:#FBBF24">Nouveau !</span>
-        <span class="mode-pill">Précision</span>
-        <span class="mode-pill">3 Vies</span>
-      </div>
-    </div>
-  </a>
-</div>
-
-<!-- RECORDS -->
-<div class="records-section anim-fadeUp delay-5" id="records-section" style="display:none">
-  <div class="records-title">🏆 Tes records</div>
-  <div class="records-grid" id="records-grid"></div>
+<!-- LEADERBOARDS (Placeholder) -->
+<div class="leader-section anim-fadeUp delay-3">
+  <div class="section-title">🏆 Classement Mondial</div>
+  <div class="leader-board">
+    <div class="text-4xl mb-sm">🌍</div>
+    <div class="text-xl weight-700 mb-sm">Le Leaderboard arrive très vite !</div>
+    <p class="text-secondary">Préparez-vous à vous mesurer au reste du monde grâce à la connexion Google Firebase.</p>
+  </div>
 </div>
 
 <!-- SETTINGS OVERLAY -->
 <div class="settings-overlay" id="settings-overlay">
+  <!-- Same settings panel as before -->
   <div class="settings-panel">
     <div class="flex justify-between items-center mb-lg">
       <h2 class="text-xl weight-700">Paramètres</h2>
       <button class="btn-icon" id="settings-close">✕</button>
     </div>
-
     <div class="settings-section-title">Fond du carré couleur</div>
     <div class="flex gap-sm mb-lg">
       <div class="swatch-picker">
-        <div class="swatch-option selected" data-bg="neutral" style="background:#484848" title="Gris neutre 18% (recommandé)"></div>
-        <div class="swatch-option" data-bg="paper" style="background:#F0EDE8" title="Blanc papier"></div>
-        <div class="swatch-option" data-bg="dark" style="background:#111111; border: 1px solid var(--bg-border)" title="Noir"></div>
+        <div class="swatch-option selected" data-bg="neutral" style="background:#484848"></div>
+        <div class="swatch-option" data-bg="paper" style="background:#F0EDE8"></div>
+        <div class="swatch-option" data-bg="dark" style="background:#111111; border: 1px solid var(--bg-border)"></div>
       </div>
     </div>
-    <p class="text-xs text-muted mb-lg" style="margin-top:-8px">Le gris 18% est le standard colorimétrique de l'industrie — il minimise les effets optiques.</p>
-
     <div class="settings-row">
       <span class="settings-row-label">🔊 Sons</span>
       <label class="toggle-switch">
@@ -390,72 +272,27 @@
         <span class="toggle-slider"></span>
       </label>
     </div>
-
     <div class="divider"></div>
     <button class="btn btn-ghost w-full" id="reset-scores-btn">🗑️ Réinitialiser les scores</button>
   </div>
 </div>
 
 <script type="module">
-  import { getSettings, saveSettings, getSwatchBgColor, initSettingsPanel, Sound } from './js/ui.js';
-  import { getGlobalStats } from './js/score.js';
+  import { getSettings, saveSettings, initSettingsPanel, Sound } from './js/ui.js';
 
-  // Init settings
   initSettingsPanel();
 
-  // Close button
   document.getElementById('settings-close').addEventListener('click', () => {
     document.getElementById('settings-overlay').classList.remove('open');
   });
 
-  // Reset scores
   document.getElementById('reset-scores-btn').addEventListener('click', () => {
-    if (confirm('Supprimer tous les scores ?')) {
+    if (confirm('Supprimer tous les scores locaux ?')) {
       localStorage.removeItem('chromaflash_data');
       location.reload();
     }
   });
 
-  // Difficulty selector
-  const s = getSettings();
-  document.querySelectorAll('.diff-btn').forEach(btn => {
-    if (btn.dataset.diff === s.difficulty) btn.classList.add('active');
-    else btn.classList.remove('active');
-
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      saveSettings({ difficulty: btn.dataset.diff });
-      Sound.click();
-    });
-  });
-
-  // Records display
-  const data = getGlobalStats();
-  if (data.records && Object.keys(data.records).length > 0) {
-    const section = document.getElementById('records-section');
-    const grid = document.getElementById('records-grid');
-    section.style.display = 'block';
-
-    const labels = { classic: '🎯 Classic', flash: '⚡ Flash', expert: '🔬 Expert', survival: '💀 Survie' };
-    for (const [mode, rec] of Object.entries(data.records)) {
-      const card = document.createElement('div');
-      card.className = 'record-card';
-      card.innerHTML = `
-        <div class="record-mode">${labels[mode] || mode}</div>
-        <div class="record-score">${rec.best?.toLocaleString?.() ?? rec.best}</div>
-        <div class="record-rank">${rec.rank || ''}</div>
-      `;
-      grid.appendChild(card);
-    }
-  }
-
-  // Navigate with difficulty
-  document.querySelectorAll('.mode-card').forEach(card => {
-    card.addEventListener('click', e => {
-      Sound.swoosh();
-    });
-  });
 </script>
 </body>
 </html>
