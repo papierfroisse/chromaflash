@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChromaFlash — Mode Expert 🔬</title>
+  <link rel="stylesheet" href="css/design.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <style>
+    body { padding-top: 60px; min-height: 100dvh; display: flex; flex-direction: column; }
+
+    .expert-layout {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-lg);
+      padding: var(--space-lg);
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+      align-items: start;
+    }
+
+    @media (max-width: 640px) {
+      .expert-layout { grid-template-columns: 1fr; }
+    }
+
+    /* Left: Target */
+    .target-col {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
+      position: sticky;
+      top: 80px;
+    }
+
+    .target-card {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-border);
+      border-radius: var(--radius-xl);
+      padding: var(--space-xl);
+      text-align: center;
+    }
+
+    .expert-swatch-wrap {
+      display: flex;
+      justify-content: center;
+      margin: var(--space-md) 0;
+    }
+
+    .expert-swatch {
+      width: 160px;
+      height: 160px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* Live ΔE meter */
+    .live-delta-card {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+    }
+
+    .live-delta-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-md);
+    }
+
+    .delta-big {
+      font-family: 'Space Mono', monospace;
+      font-size: 2.5rem;
+      font-weight: 700;
+      transition: color 0.3s;
+      line-height: 1;
+    }
+
+    .delta-label-text {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .delta-bar-track {
+      height: 8px;
+      background: var(--bg-input);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: var(--space-md);
+    }
+    .delta-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.15s, background 0.3s;
+    }
+
+    /* Blind zone — shown instead of live color preview */
+    .blind-zone {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: var(--space-md);
+      padding: 14px;
+      background: var(--bg-input);
+      border: 1px dashed var(--bg-border);
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+      font-weight: 600;
+    }
+
+    /* Comparison strip — only shown after validation */
+    .compare-strip {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      height: 60px;
+      margin-top: var(--space-md);
+      display: none;
+    }
+    .compare-strip.revealed { display: grid; }
+    .compare-half {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 6px;
+      transition: background 0.05s;
+    }
+    .compare-label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.7);
+      background: rgba(0,0,0,0.35);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    /* Right: Input */
+    .input-col {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    /* All-in-one input card */
+    .expert-input-card {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-border);
+      border-radius: var(--radius-xl);
+      padding: var(--space-xl);
+    }
+
+    .channel-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-sm);
+    }
+    .channel-grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: var(--space-sm);
+    }
+    .channel-grid-4 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: var(--space-sm);
+    }
+
+    .channel-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .channel-block label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* Section headers */
+    .section-head {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: var(--space-sm);
+    }
+
+    /* Round info */
+    .round-info-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+    }
+
+    /* Hall of fame */
+    .hof-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .hof-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: 10px var(--space-md);
+      background: var(--bg-input);
+      border-radius: var(--radius-md);
+    }
+    .hof-rank { font-size: 1rem; width: 24px; text-align: center; }
+    .hof-swatch { width: 24px; height: 24px; border-radius: 4px; }
+    .hof-info { flex: 1; }
+    .hof-delta { font-family: 'Space Mono', monospace; font-size: 0.875rem; font-weight: 700; color: var(--rank-perfect); }
+    .hof-date { font-size: 0.7rem; color: var(--text-muted); }
+
+    /* Final */
+    .expert-final {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--space-2xl) var(--space-lg);
+    }
+    .expert-final.show { display: flex; }
+
+    .expert-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-sm);
+      width: 100%;
+      max-width: 480px;
+      margin: var(--space-lg) 0;
+    }
+    .expert-summary-item {
+      background: var(--bg-input);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<header class="game-header">
+  <a href="index.html" class="back-btn">← Accueil</a>
+  <div class="flex items-center gap-md">
+    <div class="round-dots" id="round-dots"></div>
+    <span class="text-sm text-muted" id="round-label">Ronde 1/3</span>
+  </div>
+  <div class="text-xs text-muted" id="mode-label">🔬 Expert</div>
+</header>
+
+<!-- MAIN EXPERT LAYOUT -->
+<div class="expert-layout" id="expert-layout">
+
+  <!-- LEFT COL: Target + Delta -->
+  <div class="target-col anim-fadeUp">
+
+    <div class="target-card">
+      <div class="text-xs text-muted uppercase weight-700 mb-sm">Couleur cible</div>
+      <div class="expert-swatch-wrap">
+        <div id="target-swatch-bg" style="padding:20px;border-radius:12px">
+          <div class="expert-swatch" id="target-swatch"></div>
+        </div>
+      </div>
+      <div class="text-xs text-muted" id="target-info">—</div>
+    </div>
+
+    <!-- Live ΔE -->
+    <div class="live-delta-card">
+      <div class="live-delta-header">
+        <div>
+          <div class="text-xs text-muted uppercase weight-700 mb-xs">Différence perçue (ΔE)</div>
+          <div class="delta-big" id="delta-big">—</div>
+          <div class="delta-label-text" id="delta-label-text">Saisis une couleur…</div>
+        </div>
+        <div id="live-rank-badge"></div>
+      </div>
+      <div class="delta-bar-track">
+        <div class="delta-bar-fill" id="delta-bar" style="width:0%;background:#34D399"></div>
+      </div>
+
+      <!-- Blind zone: no color preview until validation -->
+      <div class="blind-zone" id="blind-zone">
+        🙈 Ta couleur est masquée — navigue par les chiffres !
+      </div>
+
+      <!-- Revealed only after validation -->
+      <div class="compare-strip" id="compare-strip">
+        <div class="compare-half" id="compare-user">
+          <span class="compare-label">Toi</span>
+        </div>
+        <div class="compare-half" id="compare-target">
+          <span class="compare-label">Cible</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT COL: Inputs -->
+  <div class="input-col anim-fadeUp delay-2">
+
+    <div class="expert-input-card">
+      <div class="round-info-bar mb-lg">
+        <div class="text-lg weight-700">Ton estimation</div>
+        <div class="text-xs text-muted">Pas de limite de temps</div>
+      </div>
+
+      <!-- HEX -->
+      <div class="section-head">HEX</div>
+      <input type="text" class="input input-mono mb-lg" id="hex-in" placeholder="#RRGGBB" maxlength="7" autocomplete="off">
+
+      <!-- RGB -->
+      <div class="section-head">RGB</div>
+      <div class="channel-grid-3 mb-lg">
+        <div class="channel-block">
+          <label style="color:#F87171">R</label>
+          <input type="number" class="input font-mono" id="r-in" min="0" max="255" placeholder="0">
+        </div>
+        <div class="channel-block">
+          <label style="color:#6BCB77">G</label>
+          <input type="number" class="input font-mono" id="g-in" min="0" max="255" placeholder="0">
+        </div>
+        <div class="channel-block">
+          <label style="color:#4D96FF">B</label>
+          <input type="number" class="input font-mono" id="b-in" min="0" max="255" placeholder="0">
+        </div>
+      </div>
+
+      <!-- CMYK -->
+      <div class="section-head">CMYK</div>
+      <div class="channel-grid-4 mb-lg">
+        <div class="channel-block">
+          <label style="color:#00D4AA">C%</label>
+          <input type="number" class="input font-mono" id="c-in" min="0" max="100" placeholder="0">
+        </div>
+        <div class="channel-block">
+          <label style="color:#FF6BBA">M%</label>
+          <input type="number" class="input font-mono" id="m-in" min="0" max="100" placeholder="0">
+        </div>
+        <div class="channel-block">
+          <label style="color:#FFE66D">Y%</label>
+          <input type="number" class="input font-mono" id="y-in" min="0" max="100" placeholder="0">
+        </div>
+        <div class="channel-block">
+          <label>K%</label>
+          <input type="number" class="input font-mono" id="k-in" min="0" max="100" placeholder="0">
+        </div>
+      </div>
+
+      <!-- HSL numérique (pas de sliders — pas de triche visuelle) -->
+      <div class="section-head">HSL — Saisie numérique</div>
+      <div class="channel-grid-3 mb-lg">
+        <div class="channel-block">
+          <label>H° <span style="color:var(--text-muted);font-weight:400">(0-360)</span></label>
+          <input type="number" class="input font-mono" id="sl-h" min="0" max="360" placeholder="180">
+        </div>
+        <div class="channel-block">
+          <label>S% <span style="color:var(--text-muted);font-weight:400">(0-100)</span></label>
+          <input type="number" class="input font-mono" id="sl-s" min="0" max="100" placeholder="50">
+        </div>
+        <div class="channel-block">
+          <label>L% <span style="color:var(--text-muted);font-weight:400">(0-100)</span></label>
+          <input type="number" class="input font-mono" id="sl-l" min="0" max="100" placeholder="50">
+        </div>
+      </div>
+
+      <div class="text-xs text-muted mb-lg" style="padding:10px;background:var(--bg-input);border-radius:8px;line-height:1.6">
+        💡 <strong>Mode Expert</strong> : ta couleur reste masquée jusqu'à la validation. Seul le ΔE te guide. Un œil calibré n'a pas besoin de voir pour savoir.
+      </div>
+
+      <button class="btn btn-primary btn-lg w-full" id="validate-btn">
+        🎯 VALIDER CETTE RÉPONSE
+      </button>
+    </div>
+
+    <!-- Hall of Fame -->
+    <div class="card-sm" id="hof-card" style="display:none">
+      <div class="text-xs text-muted uppercase weight-700 mb-md">🏆 Meilleures précisions</div>
+      <div class="hof-list" id="hof-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- RESULT (overlay) -->
+<div class="result-overlay" id="result-overlay">
+  <div class="result-card">
+    <div class="text-4xl mb-sm" id="res-emoji">⭐</div>
+    <div class="text-2xl weight-700 mb-sm" id="res-label">EXCELLENT</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:20px 0;border-radius:10px;overflow:hidden;height:80px">
+      <div id="res-user-side" style="display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px">
+        <span style="font-size:0.7rem;font-weight:700;background:rgba(0,0,0,0.35);padding:2px 8px;border-radius:999px;color:rgba(255,255,255,0.8)">Toi</span>
+      </div>
+      <div id="res-target-side" style="display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px">
+        <span style="font-size:0.7rem;font-weight:700;background:rgba(0,0,0,0.35);padding:2px 8px;border-radius:999px;color:rgba(255,255,255,0.8)">Cible</span>
+      </div>
+    </div>
+
+    <div class="score-display mb-sm" id="res-score">0</div>
+    <div class="score-max" style="margin-bottom:8px">/ 5 000 pts</div>
+    <div class="text-xs text-muted" id="res-delta-text">ΔE = —</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0">
+      <div style="background:var(--bg-input);border-radius:8px;padding:12px;text-align:center">
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px">Ton HEX</div>
+        <div class="font-mono text-sm weight-700" id="res-user-hex">—</div>
+      </div>
+      <div style="background:var(--bg-input);border-radius:8px;padding:12px;text-align:center">
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px">Cible</div>
+        <div class="font-mono text-sm weight-700" id="res-target-hex">—</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary w-full" id="res-next-btn">
+      Ronde suivante →
+    </button>
+  </div>
+</div>
+
+<!-- FINAL -->
+<div class="expert-final" id="expert-final">
+  <div style="width:100%;max-width:480px">
+    <div class="card text-center">
+      <div class="text-4xl mb-sm" id="fin-emoji">🔬</div>
+      <div class="text-3xl weight-700 mb-sm" id="fin-title">PRÉCISION FINALE</div>
+      <div class="score-display" id="fin-score">0</div>
+      <div class="score-max mb-lg">/ 15 000 pts</div>
+      <div id="fin-rank" class="mb-lg"></div>
+
+      <div class="expert-summary-grid" id="fin-summary"></div>
+
+      <div class="flex flex-col gap-sm">
+        <button class="btn btn-primary btn-lg w-full" id="fin-replay">Rejouer</button>
+        <a href="index.html" class="btn btn-ghost w-full">← Menu</a>
+        <button class="btn btn-ghost w-full" id="fin-share">📋 Copier le score</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import {
+    randomColor, rgbToHex, hexToRgb, rgbToLab, deltaE00, rgbToHsl, hslToRgb,
+    rgbToCmyk, cmykToRgb, computeScore, getRank
+  } from './js/color.js';
+  import {
+    getSettings, getSwatchBgColor, Sound, animateCounter,
+    getDeltaLabel, getDeltaBarWidth, getDeltaBarColor, showToast, launchConfetti, copyScore
+  } from './js/ui.js';
+
+  const settings = getSettings();
+  const TOTAL_ROUNDS = 3;
+  const MAX_PTS = 5000;
+  // Expert uses a stricter curve: exp(-de/3)
+  function expertScore(de) { return Math.round(MAX_PTS * Math.exp(-de / 3)); }
+
+  let round = 0;
+  let totalScore = 0;
+  let results = [];
+  let targetColor = null;
+  let currentUserRgb = null;
+
+  // ─── DOM ──────────────────────────────────────────────────────
+  const targetSwatchEl = document.getElementById('target-swatch');
+  const targetBgEl = document.getElementById('target-swatch-bg');
+  const roundDotsEl = document.getElementById('round-dots');
+  const roundLabelEl = document.getElementById('round-label');
+  const deltaBigEl = document.getElementById('delta-big');
+  const deltaLabelEl = document.getElementById('delta-label-text');
+  const deltaBarEl = document.getElementById('delta-bar');
+  const compareUserEl = document.getElementById('compare-user');
+  const compareTargetEl = document.getElementById('compare-target');
+  const liveRankEl = document.getElementById('live-rank-badge');
+  const validateBtn = document.getElementById('validate-btn');
+  const hexIn = document.getElementById('hex-in');
+  const rIn = document.getElementById('r-in');
+  const gIn = document.getElementById('g-in');
+  const bIn = document.getElementById('b-in');
+  const cIn = document.getElementById('c-in');
+  const mIn = document.getElementById('m-in');
+  const yIn = document.getElementById('y-in');
+  const kIn = document.getElementById('k-in');
+
+  // ─── INIT ─────────────────────────────────────────────────────
+  applyBg();
+  loadHof();
+  startRound();
+
+  function applyBg() {
+    const bg = getSwatchBgColor();
+    targetBgEl.style.background = bg;
+  }
+
+  // ─── ROUND ────────────────────────────────────────────────────
+  function startRound() {
+    round++;
+    targetColor = randomColor('hard'); // Expert always uses hard colors
+    targetSwatchEl.style.backgroundColor = `rgb(${targetColor.r},${targetColor.g},${targetColor.b})`;
+    // Target side of compare strip always shows target
+    compareTargetEl.style.backgroundColor = `rgb(${targetColor.r},${targetColor.g},${targetColor.b})`;
+    // User side starts hidden — revealed only after validation
+    compareUserEl.style.backgroundColor = 'var(--bg-input)';
+    document.getElementById('compare-strip').classList.remove('revealed');
+    document.getElementById('blind-zone').style.display = 'flex';
+
+    document.getElementById('target-info').textContent = 'Reproduis cette nuance sans aide visuelle';
+
+    // Dots
+    updateDots();
+    roundLabelEl.textContent = `Ronde ${round}/${TOTAL_ROUNDS}`;
+
+    // Reset inputs
+    [hexIn, rIn, gIn, bIn, cIn, mIn, yIn, kIn].forEach(el => el.value = '');
+    ['sl-h','sl-s','sl-l'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+
+    deltaBigEl.textContent = '—';
+    deltaBigEl.style.color = 'var(--text-primary)';
+    deltaLabelEl.textContent = 'Saisis une valeur pour voir le ΔE…';
+    deltaBarEl.style.width = '0%';
+    liveRankEl.innerHTML = '';
+    currentUserRgb = null;
+  }
+
+  function updateDots() {
+    roundDotsEl.innerHTML = '';
+    for (let i = 1; i <= TOTAL_ROUNDS; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'round-dot' + (i < round ? ' done' : i === round ? ' current' : '');
+      roundDotsEl.appendChild(dot);
+    }
+  }
+
+  // ─── LIVE UPDATE — ΔE only, NO color preview ──────────────────
+  function onUserColorChange(rgb) {
+    if (!rgb || !targetColor) return;
+    currentUserRgb = rgb;
+
+    const tLab = rgbToLab(targetColor);
+    const uLab = rgbToLab(rgb);
+    const de = deltaE00(tLab, uLab);
+
+    // ΔE number + bar — yes, the number is shown (that's the expert challenge)
+    deltaBigEl.textContent = de.toFixed(2);
+    deltaBigEl.style.color = getDeltaBarColor(de);
+    deltaLabelEl.textContent = getDeltaLabel(de);
+
+    const width = Math.max(2, 100 - (de / 50) * 100);
+    deltaBarEl.style.width = `${width}%`;
+    deltaBarEl.style.backgroundColor = getDeltaBarColor(de);
+
+    // NO live color preview — compare-user stays hidden (blind zone shown)
+    // Rank badge shown (based on current ΔE)
+    const score = expertScore(de);
+    const rank = getRank(score, MAX_PTS);
+    liveRankEl.innerHTML = `<span class="rank-badge ${rank.class}">${rank.emoji}</span>`;
+  }
+
+  // ─── INPUT SYNC CHAIN ─────────────────────────────────────────
+  // HEX → drives RGB + CMYK + sliders
+  hexIn.addEventListener('input', () => {
+    let v = hexIn.value.trim();
+    if (!v.startsWith('#')) v = '#' + v;
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+      const rgb = hexToRgb(v);
+      if (rgb) { syncFromRgb(rgb); onUserColorChange(rgb); }
+    }
+  });
+
+  // RGB → drives others
+  [rIn, gIn, bIn].forEach(el => {
+    el.addEventListener('input', () => {
+      const r = clamp(+rIn.value, 0, 255);
+      const g = clamp(+gIn.value, 0, 255);
+      const b = clamp(+bIn.value, 0, 255);
+      if (isNaN(r+g+b)) return;
+      const rgb = {r,g,b};
+      hexIn.value = rgbToHex(rgb).toUpperCase();
+      syncCmyk(rgb); syncSliders(rgb);
+      onUserColorChange(rgb);
+    });
+  });
+
+  // CMYK → drives others
+  [cIn, mIn, yIn, kIn].forEach(el => {
+    el.addEventListener('input', () => {
+      const c = clamp(+cIn.value, 0, 100);
+      const m = clamp(+mIn.value, 0, 100);
+      const y = clamp(+yIn.value, 0, 100);
+      const k = clamp(+kIn.value, 0, 100);
+      if ([c,m,y,k].some(isNaN)) return;
+      const rgb = cmykToRgb({c,m,y,k});
+      syncFromRgb(rgb);
+      onUserColorChange(rgb);
+    });
+  });
+
+  // HSL number inputs
+  ['h','s','l'].forEach(ch => {
+    document.getElementById(`sl-${ch}`).addEventListener('input', () => {
+      const h = clamp(+document.getElementById('sl-h').value, 0, 360);
+      const s = clamp(+document.getElementById('sl-s').value, 0, 100);
+      const l = clamp(+document.getElementById('sl-l').value, 0, 100);
+      if ([h,s,l].some(isNaN)) return;
+      const rgb = hslToRgb({h,s,l});
+      // Sync other fields silently (no visual color reveal)
+      rIn.value = rgb.r; gIn.value = rgb.g; bIn.value = rgb.b;
+      hexIn.value = rgbToHex(rgb).toUpperCase();
+      const cmyk = rgbToCmyk(rgb);
+      cIn.value = cmyk.c; mIn.value = cmyk.m; yIn.value = cmyk.y; kIn.value = cmyk.k;
+      onUserColorChange(rgb);
+    });
+  });
+
+  function syncFromRgb(rgb) {
+    rIn.value = rgb.r; gIn.value = rgb.g; bIn.value = rgb.b;
+    hexIn.value = rgbToHex(rgb).toUpperCase();
+    const cmyk = rgbToCmyk(rgb);
+    cIn.value = cmyk.c; mIn.value = cmyk.m; yIn.value = cmyk.y; kIn.value = cmyk.k;
+    const hsl = rgbToHsl(rgb);
+    document.getElementById('sl-h').value = hsl.h;
+    document.getElementById('sl-s').value = hsl.s;
+    document.getElementById('sl-l').value = hsl.l;
+  }
+  function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+  // ─── VALIDATE ────────────────────────────────────────────────
+  validateBtn.addEventListener('click', () => {
+    if (!currentUserRgb) {
+      validateBtn.classList.add('shake');
+      setTimeout(() => validateBtn.classList.remove('shake'), 400);
+      showToast('Saisis une couleur d\'abord !', 'error');
+      Sound.wrong();
+      return;
+    }
+
+    const tLab = rgbToLab(targetColor);
+    const uLab = rgbToLab(currentUserRgb);
+    const de = deltaE00(tLab, uLab);
+    const score = expertScore(de);
+    const rank = getRank(score, MAX_PTS);
+
+    results.push({ targetRgb: { ...targetColor }, userRgb: { ...currentUserRgb }, de, score, rank });
+    totalScore += score;
+
+    showResult(score, de, rank, currentUserRgb);
+  });
+
+  function showResult(score, de, rank, userRgb) {
+    document.getElementById('res-emoji').textContent = rank.emoji;
+    document.getElementById('res-label').textContent = rank.label;
+    document.getElementById('res-user-side').style.backgroundColor = `rgb(${userRgb.r},${userRgb.g},${userRgb.b})`;
+    document.getElementById('res-target-side').style.backgroundColor = `rgb(${targetColor.r},${targetColor.g},${targetColor.b})`;
+    document.getElementById('res-delta-text').textContent = `ΔE = ${de.toFixed(3)} — ${getDeltaLabel(de)}`;
+    document.getElementById('res-user-hex').textContent = rgbToHex(userRgb).toUpperCase();
+    document.getElementById('res-target-hex').textContent = rgbToHex(targetColor).toUpperCase();
+
+    // NOW reveal the compare strip on the left panel
+    compareUserEl.style.backgroundColor = `rgb(${userRgb.r},${userRgb.g},${userRgb.b})`;
+    document.getElementById('compare-strip').classList.add('revealed');
+    document.getElementById('blind-zone').style.display = 'none';
+
+    const scoreEl = document.getElementById('res-score');
+    scoreEl.textContent = '0';
+
+    document.getElementById('result-overlay').classList.add('show');
+    Sound.reveal();
+
+    setTimeout(() => {
+      animateCounter(scoreEl, 0, score, 800);
+      if (score >= MAX_PTS * 0.95) { Sound.perfect(); launchConfetti(60); }
+      else if (score >= MAX_PTS * 0.8) { Sound.excellent(); }
+      else { Sound.good(); }
+    }, 300);
+
+    // Save to HoF
+    saveHofEntry(de, targetColor, userRgb);
+  }
+
+  document.getElementById('res-next-btn').addEventListener('click', () => {
+    document.getElementById('result-overlay').classList.remove('show');
+    Sound.swoosh();
+    if (round >= TOTAL_ROUNDS) {
+      showFinal();
+    } else {
+      startRound();
+    }
+  });
+
+  // ─── FINAL ────────────────────────────────────────────────────
+  function showFinal() {
+    document.getElementById('expert-layout').style.display = 'none';
+    const fin = document.getElementById('expert-final');
+    fin.classList.add('show');
+
+    animateCounter(document.getElementById('fin-score'), 0, totalScore, 1200);
+
+    const pct = totalScore / (TOTAL_ROUNDS * MAX_PTS);
+    let globalRank;
+    if (pct >= 0.95) globalRank = { emoji:'💎', label:'MAÎTRE ABSOLU', cls:'rank-perfect' };
+    else if (pct >= 0.85) globalRank = { emoji:'⭐', label:'EXPERT CONFIRMÉ', cls:'rank-excellent' };
+    else if (pct >= 0.70) globalRank = { emoji:'🎨', label:'GRAPHISTE EXPERT', cls:'rank-great' };
+    else if (pct >= 0.50) globalRank = { emoji:'👍', label:'BON ŒIL', cls:'rank-good' };
+    else globalRank = { emoji:'🔭', label:'À CALIBRER', cls:'rank-ok' };
+
+    document.getElementById('fin-emoji').textContent = globalRank.emoji;
+    document.getElementById('fin-title').textContent = globalRank.label;
+    document.getElementById('fin-rank').innerHTML = `<span class="rank-badge ${globalRank.cls}">${globalRank.emoji} ${globalRank.label}</span>`;
+
+    const summary = document.getElementById('fin-summary');
+    results.forEach((r, i) => {
+      const item = document.createElement('div');
+      item.className = 'expert-summary-item';
+      item.innerHTML = `
+        <div style="width:40px;height:40px;background:rgb(${r.targetRgb.r},${r.targetRgb.g},${r.targetRgb.b});border-radius:6px;margin:0 auto 8px"></div>
+        <div class="font-mono text-sm weight-700">ΔE ${r.de.toFixed(2)}</div>
+        <div class="text-xs text-muted">${r.score.toLocaleString()} pts</div>
+      `;
+      summary.appendChild(item);
+    });
+
+    if (pct >= 0.85) launchConfetti(80);
+
+    // Save
+    try {
+      const data = JSON.parse(localStorage.getItem('chromaflash_data') || '{}');
+      if (!data.records) data.records = {};
+      if (!data.records.expert || totalScore > data.records.expert.best) {
+        data.records.expert = { best: totalScore, rank: globalRank.label, date: new Date().toISOString() };
+      }
+      localStorage.setItem('chromaflash_data', JSON.stringify(data));
+    } catch {}
+  }
+
+  document.getElementById('fin-replay').addEventListener('click', () => {
+    round = 0; totalScore = 0; results = [];
+    document.getElementById('fin-summary').innerHTML = '';
+    document.getElementById('expert-final').classList.remove('show');
+    document.getElementById('expert-layout').style.display = 'grid';
+    startRound();
+    Sound.swoosh();
+  });
+
+  document.getElementById('fin-share').addEventListener('click', () => {
+    const avgDe = results.reduce((s,r) => s + r.de, 0) / results.length;
+    const text = `🔬 ChromaFlash — Mode Expert\nScore : ${totalScore.toLocaleString()} / ${(TOTAL_ROUNDS * MAX_PTS).toLocaleString()} pts\nΔE moyen : ${avgDe.toFixed(2)}\n\nTeste ta précision colorimétrique !`;
+    copyScore(text);
+  });
+
+  // ─── HALL OF FAME ─────────────────────────────────────────────
+  function loadHof() {
+    try {
+      const data = JSON.parse(localStorage.getItem('cf_expert_hof') || '[]');
+      if (data.length > 0) {
+        document.getElementById('hof-card').style.display = 'block';
+        renderHof(data);
+      }
+    } catch {}
+  }
+
+  function saveHofEntry(de, targetRgb, userRgb) {
+    try {
+      const data = JSON.parse(localStorage.getItem('cf_expert_hof') || '[]');
+      data.push({ de, targetHex: rgbToHex(targetRgb), userHex: rgbToHex(userRgb), date: new Date().toLocaleDateString('fr-FR') });
+      data.sort((a, b) => a.de - b.de);
+      const trimmed = data.slice(0, 5);
+      localStorage.setItem('cf_expert_hof', JSON.stringify(trimmed));
+      document.getElementById('hof-card').style.display = 'block';
+      renderHof(trimmed);
+    } catch {}
+  }
+
+  function renderHof(entries) {
+    const list = document.getElementById('hof-list');
+    list.innerHTML = '';
+    const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+    entries.forEach((e, i) => {
+      const row = document.createElement('div');
+      row.className = 'hof-row';
+      row.innerHTML = `
+        <span class="hof-rank">${medals[i]}</span>
+        <div class="hof-swatch" style="background:${e.targetHex}"></div>
+        <div class="hof-info">
+          <div class="hof-delta">ΔE ${e.de.toFixed(3)}</div>
+          <div class="hof-date">${e.date}</div>
+        </div>
+        <div style="font-family:'Space Mono',monospace;font-size:0.75rem;color:var(--text-muted)">${e.userHex}</div>
+      `;
+      list.appendChild(row);
+    });
+  }
+</script>
+</body>
+</html>

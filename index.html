@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChromaFlash — Le Test Colorimétrique pour Graphistes</title>
+  <meta name="description" content="Testez votre perception des couleurs : mode Flash WarioWare, Classic GeoGuessr, Expert et Survie. Le défi colorimétrique ultime pour les graphistes.">
+  <link rel="stylesheet" href="css/design.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <style>
+    body { padding-top: 60px; }
+
+    .hero {
+      text-align: center;
+      padding: var(--space-xl) var(--space-lg) var(--space-lg);
+    }
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent-glow);
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: var(--space-lg);
+    }
+    .hero-title {
+      font-size: clamp(2.5rem, 8vw, 4rem);
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      margin-bottom: var(--space-md);
+    }
+    .hero-title span {
+      background: linear-gradient(135deg, #FF6B6B, #FF9F1C, #FFE66D, #6BCB77, #4D96FF, #B388FF);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-size: 200% auto;
+      animation: shimmer 3s linear infinite;
+    }
+    .hero-sub {
+      font-size: 1.0625rem;
+      color: var(--text-secondary);
+      max-width: 420px;
+      margin: 0 auto var(--space-xl);
+      line-height: 1.6;
+    }
+
+    /* Difficulty selector */
+    .diff-selector {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      background: var(--bg-card);
+      border: 1px solid var(--bg-border);
+      border-radius: var(--radius-full);
+      padding: 6px;
+      margin-bottom: var(--space-xl);
+    }
+    .diff-btn {
+      padding: 8px 20px;
+      border-radius: var(--radius-full);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      background: none;
+      font-family: inherit;
+    }
+    .diff-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+    .diff-btn:not(.active):hover { color: var(--text-primary); }
+
+    /* Modes grid */
+    .modes-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-md);
+      padding: 0 var(--space-lg) var(--space-xl);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    @media (max-width: 500px) {
+      .modes-grid { grid-template-columns: 1fr; }
+    }
+
+    .mode-card[data-mode="flash"]   { --mode-color: #FF6B6B; --mode-color-dim: rgba(255,107,107,0.12); }
+    .mode-card[data-mode="classic"] { --mode-color: #4D96FF; --mode-color-dim: rgba(77,150,255,0.12); }
+    .mode-card[data-mode="expert"]  { --mode-color: #34D399; --mode-color-dim: rgba(52,211,153,0.12); }
+    .mode-card[data-mode="survie"]  { --mode-color: #F87171; --mode-color-dim: rgba(248,113,113,0.12); }
+
+    .mode-card-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Records section */
+    .records-section {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 0 var(--space-lg) var(--space-xl);
+    }
+    .records-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: var(--space-md);
+    }
+    .records-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-sm);
+    }
+    .record-card {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+    }
+    .record-mode { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; }
+    .record-score { font-family: 'Space Mono', monospace; font-size: 1.125rem; font-weight: 700; }
+    .record-rank { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
+
+    /* Settings toggle */
+    .toggle-switch {
+      position: relative;
+      width: 44px; height: 24px;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0;
+      background: var(--bg-input);
+      border-radius: 999px;
+      border: 1px solid var(--bg-border);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      top: 2px; left: 2px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-md);
+    }
+    .settings-row-label {
+      font-size: 0.9375rem;
+      font-weight: 500;
+    }
+    .settings-section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: var(--space-md);
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="game-header">
+  <span class="logo-text">ChromaFlash</span>
+  <div class="flex gap-sm items-center">
+    <button class="btn-icon" id="settings-btn" title="Paramètres" aria-label="Paramètres">⚙️</button>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero anim-fadeUp">
+  <div class="hero-tag">🎨 Test colorimétrique</div>
+  <h1 class="hero-title">Combien <span>voyez-vous</span><br>de couleurs ?</h1>
+  <p class="hero-sub">Le défi de perception chromatique pour graphistes. Quatre modes, une seule règle : soyez précis.</p>
+
+  <!-- Difficulté -->
+  <div class="diff-selector" id="diff-selector">
+    <button class="diff-btn" data-diff="easy">🟢 Débutant</button>
+    <button class="diff-btn active" data-diff="normal">🟡 Normal</button>
+    <button class="diff-btn" data-diff="hard">🔴 Graphiste</button>
+  </div>
+</div>
+
+<!-- MODES GRID -->
+<div class="modes-grid">
+
+  <a href="classic.html" class="mode-card anim-fadeUp delay-1" data-mode="classic" id="card-classic">
+    <div class="mode-card-inner">
+      <span class="mode-icon">🎯</span>
+      <div class="mode-title">CLASSIC</div>
+      <div class="mode-sub">5 rondes · Style GeoGuessr</div>
+      <div class="mode-pills">
+        <span class="mode-pill">Précision</span>
+        <span class="mode-pill">Révélé</span>
+        <span class="mode-pill">5 000 pts</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="flash.html" class="mode-card anim-fadeUp delay-2" data-mode="flash" id="card-flash">
+    <div class="mode-card-inner">
+      <span class="mode-icon">⚡</span>
+      <div class="mode-title">FLASH</div>
+      <div class="mode-sub">8 mini-jeux · Style WarioWare</div>
+      <div class="mode-pills">
+        <span class="mode-pill">Rapidité</span>
+        <span class="mode-pill">Instinct</span>
+        <span class="mode-pill">Rang S</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="expert.html" class="mode-card anim-fadeUp delay-3" data-mode="expert" id="card-expert">
+    <div class="mode-card-inner">
+      <span class="mode-icon">🔬</span>
+      <div class="mode-title">EXPERT</div>
+      <div class="mode-sub">3 rondes · Précision absolue</div>
+      <div class="mode-pills">
+        <span class="mode-pill">Pas de chrono</span>
+        <span class="mode-pill">ΔE live</span>
+        <span class="mode-pill">Hall of Fame</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="survie.html" class="mode-card anim-fadeUp delay-4" data-mode="survie" id="card-survie">
+    <div class="mode-card-inner">
+      <span class="mode-icon">💀</span>
+      <div class="mode-title">SURVIE</div>
+      <div class="mode-sub">Infini · Roguelite</div>
+      <div class="mode-pills">
+        <span class="mode-pill">3 vies</span>
+        <span class="mode-pill">Niveaux</span>
+        <span class="mode-pill">Événements</span>
+      </div>
+    </div>
+  </a>
+
+</div>
+
+<!-- RECORDS -->
+<div class="records-section anim-fadeUp delay-5" id="records-section" style="display:none">
+  <div class="records-title">🏆 Tes records</div>
+  <div class="records-grid" id="records-grid"></div>
+</div>
+
+<!-- SETTINGS OVERLAY -->
+<div class="settings-overlay" id="settings-overlay">
+  <div class="settings-panel">
+    <div class="flex justify-between items-center mb-lg">
+      <h2 class="text-xl weight-700">Paramètres</h2>
+      <button class="btn-icon" id="settings-close">✕</button>
+    </div>
+
+    <div class="settings-section-title">Fond du carré couleur</div>
+    <div class="flex gap-sm mb-lg">
+      <div class="swatch-picker">
+        <div class="swatch-option selected" data-bg="neutral" style="background:#484848" title="Gris neutre 18% (recommandé)"></div>
+        <div class="swatch-option" data-bg="paper" style="background:#F0EDE8" title="Blanc papier"></div>
+        <div class="swatch-option" data-bg="dark" style="background:#111111; border: 1px solid var(--bg-border)" title="Noir"></div>
+      </div>
+    </div>
+    <p class="text-xs text-muted mb-lg" style="margin-top:-8px">Le gris 18% est le standard colorimétrique de l'industrie — il minimise les effets optiques.</p>
+
+    <div class="settings-row">
+      <span class="settings-row-label">🔊 Sons</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="sound-toggle" checked>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="divider"></div>
+    <button class="btn btn-ghost w-full" id="reset-scores-btn">🗑️ Réinitialiser les scores</button>
+  </div>
+</div>
+
+<script type="module">
+  import { getSettings, saveSettings, getSwatchBgColor, initSettingsPanel, Sound } from './js/ui.js';
+  import { getGlobalStats } from './js/score.js';
+
+  // Init settings
+  initSettingsPanel();
+
+  // Close button
+  document.getElementById('settings-close').addEventListener('click', () => {
+    document.getElementById('settings-overlay').classList.remove('open');
+  });
+
+  // Reset scores
+  document.getElementById('reset-scores-btn').addEventListener('click', () => {
+    if (confirm('Supprimer tous les scores ?')) {
+      localStorage.removeItem('chromaflash_data');
+      location.reload();
+    }
+  });
+
+  // Difficulty selector
+  const s = getSettings();
+  document.querySelectorAll('.diff-btn').forEach(btn => {
+    if (btn.dataset.diff === s.difficulty) btn.classList.add('active');
+    else btn.classList.remove('active');
+
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      saveSettings({ difficulty: btn.dataset.diff });
+      Sound.click();
+    });
+  });
+
+  // Records display
+  const data = getGlobalStats();
+  if (data.records && Object.keys(data.records).length > 0) {
+    const section = document.getElementById('records-section');
+    const grid = document.getElementById('records-grid');
+    section.style.display = 'block';
+
+    const labels = { classic: '🎯 Classic', flash: '⚡ Flash', expert: '🔬 Expert', survival: '💀 Survie' };
+    for (const [mode, rec] of Object.entries(data.records)) {
+      const card = document.createElement('div');
+      card.className = 'record-card';
+      card.innerHTML = `
+        <div class="record-mode">${labels[mode] || mode}</div>
+        <div class="record-score">${rec.best?.toLocaleString?.() ?? rec.best}</div>
+        <div class="record-rank">${rec.rank || ''}</div>
+      `;
+      grid.appendChild(card);
+    }
+  }
+
+  // Navigate with difficulty
+  document.querySelectorAll('.mode-card').forEach(card => {
+    card.addEventListener('click', e => {
+      Sound.swoosh();
+    });
+  });
+</script>
+</body>
+</html>

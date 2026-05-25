@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChromaFlash — Mode Classic</title>
+  <link rel="stylesheet" href="css/design.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <style>
+    body { padding: 60px 0 40px; min-height: 100dvh; display: flex; flex-direction: column; }
+
+    .game-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--space-lg);
+      gap: var(--space-lg);
+    }
+
+    /* Top bar */
+    .top-bar {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+    }
+
+    /* Swatch */
+    .swatch-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    .swatch-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    /* Input panel */
+    .input-panel {
+      width: 100%;
+      max-width: 520px;
+      background: var(--bg-card);
+      border: 1px solid var(--bg-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+    }
+
+    /* Tab panels */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .rgb-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: var(--space-sm);
+    }
+
+    .cmyk-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-sm);
+    }
+
+    .channel-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .channel-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* Live preview split */
+    .preview-split {
+      width: 100%;
+      max-width: 520px;
+      display: none;
+    }
+    .preview-split.visible { display: block; }
+
+    /* Result card */
+    .result-panel {
+      width: 100%;
+      max-width: 520px;
+      display: none;
+    }
+    .result-panel.visible { display: block; animation: scaleIn 0.4s var(--ease-spring) both; }
+
+    .result-info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-sm);
+      margin: var(--space-lg) 0;
+    }
+    .result-info-item {
+      background: var(--bg-input);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      text-align: center;
+    }
+    .result-info-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; }
+    .result-info-value { font-family: 'Space Mono', monospace; font-size: 1rem; font-weight: 700; }
+
+    /* Final results */
+    .final-panel {
+      display: none;
+      width: 100%;
+      max-width: 520px;
+    }
+    .final-panel.visible { display: block; animation: fadeUp 0.5s var(--ease-out) both; }
+
+    .rounds-summary {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+      margin: var(--space-lg) 0;
+    }
+    .round-summary-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      background: var(--bg-input);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+    }
+    .round-summary-swatch {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-sm);
+      flex-shrink: 0;
+    }
+    .round-summary-info { flex: 1; }
+    .round-summary-score {
+      font-family: 'Space Mono', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    /* Timer bonus badge */
+    .bonus-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      background: rgba(251,191,36,0.12);
+      border: 1px solid rgba(251,191,36,0.25);
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #FBBF24;
+    }
+
+    .delta-live-wrapper { margin-top: var(--space-md); }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="game-header">
+  <a href="index.html" class="back-btn">← Accueil</a>
+  <div class="flex items-center gap-md">
+    <div class="round-dots" id="round-dots"></div>
+    <div class="timer-ring-wrapper" id="timer-wrapper">
+      <svg class="timer-ring" width="52" height="52" viewBox="0 0 52 52">
+        <circle class="timer-ring-bg" cx="26" cy="26" r="22"/>
+        <circle class="timer-ring-fill" id="timer-fill" cx="26" cy="26" r="22"/>
+      </svg>
+      <div class="timer-text" id="timer-text">45</div>
+    </div>
+  </div>
+  <div class="flex items-center gap-sm">
+    <div id="streak-display"></div>
+    <div class="font-mono text-lg weight-700" id="total-score-display">0</div>
+  </div>
+</header>
+
+<!-- GAME AREA -->
+<main class="game-area" id="main-game">
+
+  <!-- TOP BAR -->
+  <div class="top-bar anim-fadeDown">
+    <div>
+      <div class="text-xs text-muted uppercase weight-700" id="round-label">Ronde 1 / 5</div>
+      <div class="text-lg weight-600 mt-sm" id="mode-diff-label">Mode Normal</div>
+    </div>
+    <div class="timer-ring-wrapper" id="bonus-timer-indicator">
+      <span class="bonus-badge" id="bonus-badge" style="display:none">⚡ BONUS +500</span>
+    </div>
+  </div>
+
+  <!-- SWATCH -->
+  <div class="swatch-section anim-scaleIn">
+    <div class="swatch-label">Couleur cible</div>
+    <div class="swatch-bg" id="swatch-bg" style="padding:20px; border-radius:12px;">
+      <div class="swatch" id="target-swatch"></div>
+    </div>
+  </div>
+
+  <!-- INPUT PANEL -->
+  <div class="input-panel anim-fadeUp delay-2">
+
+    <!-- Tabs -->
+    <div class="tabs mb-lg" id="input-tabs">
+      <div class="tab active" data-tab="hex">HEX</div>
+      <div class="tab" data-tab="rgb">RGB</div>
+      <div class="tab" data-tab="cmyk">CMYK</div>
+      <div class="tab" data-tab="hsl">HSL</div>
+      <div class="tab" data-tab="sliders">🎚️</div>
+    </div>
+
+    <!-- HEX Panel -->
+    <div class="tab-panel active" id="panel-hex">
+      <input type="text" class="input input-mono" id="hex-input" placeholder="#FF5733" maxlength="7" spellcheck="false" autocomplete="off">
+    </div>
+
+    <!-- RGB Panel -->
+    <div class="tab-panel" id="panel-rgb">
+      <div class="rgb-row">
+        <div class="channel-group">
+          <div class="channel-label" style="color:#F87171">R</div>
+          <input type="number" class="input font-mono" id="r-input" min="0" max="255" placeholder="0">
+        </div>
+        <div class="channel-group">
+          <div class="channel-label" style="color:#6BCB77">G</div>
+          <input type="number" class="input font-mono" id="g-input" min="0" max="255" placeholder="0">
+        </div>
+        <div class="channel-group">
+          <div class="channel-label" style="color:#4D96FF">B</div>
+          <input type="number" class="input font-mono" id="b-input" min="0" max="255" placeholder="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- CMYK Panel -->
+    <div class="tab-panel" id="panel-cmyk">
+      <div class="cmyk-row">
+        <div class="channel-group">
+          <div class="channel-label" style="color:#00D4AA">C%</div>
+          <input type="number" class="input font-mono" id="c-input" min="0" max="100" placeholder="0">
+        </div>
+        <div class="channel-group">
+          <div class="channel-label" style="color:#FF6BBA">M%</div>
+          <input type="number" class="input font-mono" id="m-input" min="0" max="100" placeholder="0">
+        </div>
+        <div class="channel-group">
+          <div class="channel-label" style="color:#FFE66D">Y%</div>
+          <input type="number" class="input font-mono" id="y-input" min="0" max="100" placeholder="0">
+        </div>
+        <div class="channel-group">
+          <div class="channel-label">K%</div>
+          <input type="number" class="input font-mono" id="k-input" min="0" max="100" placeholder="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- HSL Panel -->
+    <div class="tab-panel" id="panel-hsl">
+      <div class="rgb-row">
+        <div class="channel-group">
+          <div class="channel-label">H°</div>
+          <input type="number" class="input font-mono" id="h-input" min="0" max="360" placeholder="0">
+        </div>
+        <div class="channel-group">
+          <div class="channel-label">S%</div>
+          <input type="number" class="input font-mono" id="s-input" min="0" max="100" placeholder="0">
+        </div>
+        <div class="channel-group">
+          <div class="channel-label">L%</div>
+          <input type="number" class="input font-mono" id="l-input" min="0" max="100" placeholder="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- Sliders Panel -->
+    <div class="tab-panel" id="panel-sliders">
+      <div class="flex flex-col gap-md">
+        <div class="slider-track">
+          <div class="slider-label-row">
+            <span class="slider-label" style="color:#F87171">Rouge</span>
+            <span class="slider-value" id="slider-r-val">0</span>
+          </div>
+          <input type="range" id="slider-r" min="0" max="255" value="0"
+            style="--track-bg: linear-gradient(to right, #111, #F87171)">
+        </div>
+        <div class="slider-track">
+          <div class="slider-label-row">
+            <span class="slider-label" style="color:#6BCB77">Vert</span>
+            <span class="slider-value" id="slider-g-val">0</span>
+          </div>
+          <input type="range" id="slider-g" min="0" max="255" value="0"
+            style="--track-bg: linear-gradient(to right, #111, #6BCB77)">
+        </div>
+        <div class="slider-track">
+          <div class="slider-label-row">
+            <span class="slider-label" style="color:#4D96FF">Bleu</span>
+            <span class="slider-value" id="slider-b-val">0</span>
+          </div>
+          <input type="range" id="slider-b" min="0" max="255" value="0"
+            style="--track-bg: linear-gradient(to right, #111, #4D96FF)">
+        </div>
+        <!-- Live preview swatch for sliders -->
+        <div class="swatch-bg" style="padding:8px; border-radius:8px; display:flex; justify-content:center; margin-top:4px;">
+          <div id="slider-preview" style="width:100%; height:40px; border-radius:6px; transition: background 0.05s;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Validate button -->
+    <button class="btn btn-primary btn-lg w-full mt-lg" id="validate-btn">
+      VALIDER
+    </button>
+
+  </div>
+
+  <!-- RESULT PANEL (shown after validation) -->
+  <div class="result-panel" id="result-panel">
+    <div class="card">
+
+      <!-- Split reveal -->
+      <div class="split-reveal mb-lg" id="split-reveal">
+        <div class="split-side" id="split-user">
+          <span class="split-label">Toi</span>
+        </div>
+        <div class="split-side" id="split-target">
+          <span class="split-label">Cible</span>
+        </div>
+      </div>
+
+      <!-- Score -->
+      <div class="text-center">
+        <div class="text-xs text-muted uppercase weight-700 mb-sm">Score</div>
+        <div class="score-display" id="result-score">0</div>
+        <div class="score-max">/ 5 000</div>
+        <div class="mt-sm" id="result-rank-badge"></div>
+        <div class="text-xs text-muted mt-sm" id="result-delta"></div>
+      </div>
+
+      <div class="result-info-grid">
+        <div class="result-info-item">
+          <div class="result-info-label">Couleur cible</div>
+          <div class="result-info-value font-mono" id="result-target-hex">—</div>
+        </div>
+        <div class="result-info-item">
+          <div class="result-info-label">Ton guess</div>
+          <div class="result-info-value font-mono" id="result-user-hex">—</div>
+        </div>
+      </div>
+
+      <div class="flex gap-sm">
+        <button class="btn btn-primary w-full" id="next-btn">Ronde suivante →</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- FINAL RESULTS -->
+<div class="final-panel page-center" id="final-panel">
+  <div class="container">
+    <div class="card text-center">
+      <div class="text-4xl mb-sm" id="final-emoji">🏆</div>
+      <div class="text-2xl weight-700 mb-sm" id="final-rank-label">MAÎTRE COLORISTE</div>
+      <div class="text-secondary mb-lg">Partie terminée !</div>
+
+      <div class="score-display" id="final-score">0</div>
+      <div class="score-max mb-lg">/ 25 000</div>
+
+      <div id="final-rank-badge" class="mb-lg"></div>
+
+      <div class="rounds-summary" id="rounds-summary"></div>
+
+      <div class="flex flex-col gap-sm mt-lg">
+        <button class="btn btn-primary btn-lg w-full" id="play-again-btn">Rejouer</button>
+        <a href="index.html" class="btn btn-ghost w-full">← Menu</a>
+        <button class="btn btn-ghost w-full" id="share-btn">📋 Copier mon score</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import {
+    hexToRgb, rgbToHex, rgbToCmyk, cmykToRgb, rgbToHsl, hslToRgb,
+    randomColor, rgbToLab
+  } from './js/color.js';
+  import { GameSession } from './js/score.js';
+  import {
+    getSettings, getSwatchBgColor, playSoundForScore, animateCounter,
+    getDeltaLabel, getDeltaClass, getDeltaBarWidth, getDeltaBarColor,
+    updateRoundDots, updateTimerRing, showToast, copyScore, launchConfetti, Sound
+  } from './js/ui.js';
+
+  // ─── STATE ───────────────────────────────────────────────────
+  const settings = getSettings();
+  const TOTAL_ROUNDS = 5;
+  const MAX_PER_ROUND = 5000;
+  const TIMER_SECONDS = 45;
+  const SPEED_BONUS = 500;
+  const SPEED_THRESHOLD = 30; // seconds remaining to get bonus
+
+  let session = new GameSession('classic', TOTAL_ROUNDS, MAX_PER_ROUND);
+  let targetColor = null;
+  let roundStartTime = null;
+  let timerInterval = null;
+  let secondsLeft = TIMER_SECONDS;
+  let currentTab = 'hex';
+  let pendingUserRgb = null;
+  let animatingScore = false;
+
+  // ─── DOM REFS ────────────────────────────────────────────────
+  const swatchBgEl = document.getElementById('swatch-bg');
+  const targetSwatchEl = document.getElementById('target-swatch');
+  const roundDotsEl = document.getElementById('round-dots');
+  const roundLabelEl = document.getElementById('round-label');
+  const totalScoreEl = document.getElementById('total-score-display');
+  const streakEl = document.getElementById('streak-display');
+  const timerFillEl = document.getElementById('timer-fill');
+  const timerTextEl = document.getElementById('timer-text');
+  const timerWrapperEl = document.getElementById('timer-wrapper');
+  const validateBtn = document.getElementById('validate-btn');
+  const nextBtn = document.getElementById('next-btn');
+  const resultPanel = document.getElementById('result-panel');
+  const finalPanel = document.getElementById('final-panel');
+  const mainGame = document.getElementById('main-game');
+  const bonusBadge = document.getElementById('bonus-badge');
+  const diffLabel = document.getElementById('mode-diff-label');
+
+  // ─── INIT ────────────────────────────────────────────────────
+  applySwatchBg();
+  diffLabel.textContent = {easy:'Mode Débutant', normal:'Mode Normal', hard:'Mode Graphiste'}[settings.difficulty] || 'Mode Normal';
+  startRound();
+
+  function applySwatchBg() {
+    swatchBgEl.style.background = getSwatchBgColor();
+  }
+
+  // ─── ROUND LOGIC ─────────────────────────────────────────────
+  function startRound() {
+    targetColor = randomColor(settings.difficulty);
+    targetSwatchEl.style.backgroundColor = `rgb(${targetColor.r},${targetColor.g},${targetColor.b})`;
+
+    // Reset inputs
+    clearInputs();
+    resultPanel.classList.remove('visible');
+    validateBtn.style.display = 'flex';
+
+    // Round UI
+    updateRoundDots(roundDotsEl, session.currentRound, TOTAL_ROUNDS);
+    roundLabelEl.textContent = `Ronde ${session.currentRound} / ${TOTAL_ROUNDS}`;
+
+    // Timer
+    secondsLeft = TIMER_SECONDS;
+    bonusBadge.style.display = 'none';
+    clearInterval(timerInterval);
+    updateTimerRing(timerFillEl, timerTextEl, secondsLeft, TIMER_SECONDS);
+    timerWrapperEl.classList.remove('timer-urgent');
+    roundStartTime = Date.now();
+
+    timerInterval = setInterval(() => {
+      secondsLeft = Math.max(0, TIMER_SECONDS - Math.floor((Date.now() - roundStartTime) / 1000));
+      updateTimerRing(timerFillEl, timerTextEl, secondsLeft, TIMER_SECONDS);
+      if (secondsLeft <= 10) timerWrapperEl.classList.add('timer-urgent');
+    }, 1000);
+
+    // Animate in
+    document.querySelector('.swatch-section').style.animation = 'none';
+    requestAnimationFrame(() => {
+      document.querySelector('.swatch-section').style.animation = 'scaleIn 0.4s var(--ease-spring) both';
+    });
+  }
+
+  function clearInputs() {
+    ['hex-input','r-input','g-input','b-input','c-input','m-input','y-input','k-input','h-input','s-input','l-input'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    ['slider-r','slider-g','slider-b'].forEach(id => {
+      document.getElementById(id).value = 0;
+    });
+    document.getElementById('slider-r-val').textContent = '0';
+    document.getElementById('slider-g-val').textContent = '0';
+    document.getElementById('slider-b-val').textContent = '0';
+    document.getElementById('slider-preview').style.backgroundColor = 'transparent';
+    pendingUserRgb = null;
+  }
+
+  // ─── TAB SWITCHING ───────────────────────────────────────────
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      currentTab = tab.dataset.tab;
+      document.getElementById(`panel-${currentTab}`).classList.add('active');
+      Sound.click();
+    });
+  });
+
+  // ─── SLIDER SYNC ─────────────────────────────────────────────
+  ['r','g','b'].forEach(ch => {
+    const slider = document.getElementById(`slider-${ch}`);
+    const valEl = document.getElementById(`slider-${ch}-val`);
+    slider.addEventListener('input', () => {
+      valEl.textContent = slider.value;
+      updateSliderPreview();
+    });
+  });
+
+  function updateSliderPreview() {
+    const r = +document.getElementById('slider-r').value;
+    const g = +document.getElementById('slider-g').value;
+    const b = +document.getElementById('slider-b').value;
+    document.getElementById('slider-preview').style.backgroundColor = `rgb(${r},${g},${b})`;
+  }
+
+  // ─── GET USER RGB FROM CURRENT TAB ───────────────────────────
+  function getUserRgb() {
+    try {
+      switch(currentTab) {
+        case 'hex': {
+          let v = document.getElementById('hex-input').value.trim();
+          if (!v) return null;
+          if (!v.startsWith('#')) v = '#' + v;
+          if (!/^#[0-9a-fA-F]{6}$/.test(v) && !/^#[0-9a-fA-F]{3}$/.test(v)) return null;
+          return hexToRgb(v);
+        }
+        case 'rgb': {
+          const r = +document.getElementById('r-input').value;
+          const g = +document.getElementById('g-input').value;
+          const b = +document.getElementById('b-input').value;
+          if (isNaN(r)||isNaN(g)||isNaN(b)) return null;
+          return { r: Math.max(0,Math.min(255,r)), g: Math.max(0,Math.min(255,g)), b: Math.max(0,Math.min(255,b)) };
+        }
+        case 'cmyk': {
+          const c = +document.getElementById('c-input').value;
+          const m = +document.getElementById('m-input').value;
+          const y = +document.getElementById('y-input').value;
+          const k = +document.getElementById('k-input').value;
+          if ([c,m,y,k].some(isNaN)) return null;
+          return cmykToRgb({ c, m, y, k });
+        }
+        case 'hsl': {
+          const h = +document.getElementById('h-input').value;
+          const s = +document.getElementById('s-input').value;
+          const l = +document.getElementById('l-input').value;
+          if ([h,s,l].some(isNaN)) return null;
+          return hslToRgb({ h, s, l });
+        }
+        case 'sliders': {
+          const r = +document.getElementById('slider-r').value;
+          const g = +document.getElementById('slider-g').value;
+          const b = +document.getElementById('slider-b').value;
+          return { r, g, b };
+        }
+      }
+    } catch { return null; }
+    return null;
+  }
+
+  // ─── VALIDATE ────────────────────────────────────────────────
+  validateBtn.addEventListener('click', () => {
+    const userRgb = getUserRgb();
+    if (!userRgb) {
+      validateBtn.classList.add('shake');
+      setTimeout(() => validateBtn.classList.remove('shake'), 400);
+      showToast('Entre une couleur valide !', 'error');
+      Sound.wrong();
+      return;
+    }
+
+    clearInterval(timerInterval);
+
+    // Speed bonus
+    const elapsed = Math.floor((Date.now() - roundStartTime) / 1000);
+    const speedBonus = (TIMER_SECONDS - elapsed) >= SPEED_THRESHOLD ? SPEED_BONUS : 0;
+
+    // Score
+    const roundResult = session.addRound(targetColor, userRgb);
+    const scoreWithBonus = Math.min(MAX_PER_ROUND, roundResult.score + speedBonus);
+
+    pendingUserRgb = userRgb;
+
+    // Show result
+    showResult(roundResult, userRgb, speedBonus);
+
+    // Update total
+    animateCounter(totalScoreEl, session.totalScore - scoreWithBonus, session.totalScore, 600);
+
+    // Streak
+    if (session.streak >= 2) {
+      streakEl.innerHTML = `<div class="streak-badge">🔥 ${session.streak}</div>`;
+    } else {
+      streakEl.innerHTML = '';
+    }
+  });
+
+  function showResult(result, userRgb, speedBonus) {
+    validateBtn.style.display = 'none';
+
+    // Split reveal colors
+    document.getElementById('split-user').style.backgroundColor = `rgb(${userRgb.r},${userRgb.g},${userRgb.b})`;
+    document.getElementById('split-target').style.backgroundColor = `rgb(${targetColor.r},${targetColor.g},${targetColor.b})`;
+
+    // Score animation
+    const scoreEl = document.getElementById('result-score');
+    scoreEl.textContent = '0';
+
+    // Rank badge
+    const rankBadge = document.getElementById('result-rank-badge');
+    rankBadge.innerHTML = `<span class="rank-badge ${result.rank.class}">${result.rank.emoji} ${result.rank.label}</span>`;
+
+    // Delta info
+    document.getElementById('result-delta').textContent = `ΔE = ${result.deltaE.toFixed(2)} — ${getDeltaLabel(result.deltaE)}`;
+
+    // HEX values
+    document.getElementById('result-target-hex').textContent = rgbToHex(targetColor).toUpperCase();
+    document.getElementById('result-user-hex').textContent = rgbToHex(userRgb).toUpperCase();
+
+    // Speed bonus
+    if (speedBonus > 0) {
+      bonusBadge.style.display = 'inline-flex';
+    }
+
+    resultPanel.classList.add('visible');
+
+    // Play sound + animations after slight delay
+    setTimeout(() => {
+      Sound.reveal();
+      animateCounter(scoreEl, 0, result.score, 800);
+      playSoundForScore(result.score, MAX_PER_ROUND);
+    }, 300);
+  }
+
+  // ─── NEXT ROUND / FINAL ──────────────────────────────────────
+  nextBtn.addEventListener('click', () => {
+    Sound.swoosh();
+    if (session.isComplete) {
+      showFinal();
+    } else {
+      startRound();
+    }
+  });
+
+  function showFinal() {
+    mainGame.style.display = 'none';
+    finalPanel.classList.add('visible');
+
+    const summary = session.getFinalSummary();
+    session.save();
+
+    animateCounter(document.getElementById('final-score'), 0, summary.total, 1200);
+    document.getElementById('final-emoji').textContent = summary.globalRank.emoji;
+    document.getElementById('final-rank-label').textContent = summary.globalRank.label;
+    document.getElementById('final-rank-badge').innerHTML =
+      `<span class="rank-badge ${summary.globalRank.class}">${summary.globalRank.label}</span>`;
+
+    // Rounds summary
+    const container = document.getElementById('rounds-summary');
+    summary.rounds.forEach((r, i) => {
+      const item = document.createElement('div');
+      item.className = 'round-summary-item';
+      item.style.animationDelay = `${i * 0.08}s`;
+      item.innerHTML = `
+        <div class="round-summary-swatch" style="background:rgb(${r.targetRgb.r},${r.targetRgb.g},${r.targetRgb.b})"></div>
+        <div class="round-summary-info">
+          <div class="text-sm weight-600">Ronde ${i+1}</div>
+          <div class="text-xs text-muted">ΔE = ${r.deltaE.toFixed(1)}</div>
+        </div>
+        <div class="round-summary-score">${r.score.toLocaleString()}</div>
+        <span class="rank-badge ${r.rank.class}" style="font-size:0.7rem">${r.rank.emoji}</span>
+      `;
+      container.appendChild(item);
+    });
+
+    if (summary.pct >= 0.85) launchConfetti(80);
+    else if (summary.pct >= 0.70) launchConfetti(40);
+  }
+
+  document.getElementById('play-again-btn').addEventListener('click', () => {
+    session = new GameSession('classic', TOTAL_ROUNDS, MAX_PER_ROUND);
+    finalPanel.classList.remove('visible');
+    mainGame.style.display = 'flex';
+    document.getElementById('rounds-summary').innerHTML = '';
+    totalScoreEl.textContent = '0';
+    streakEl.innerHTML = '';
+    startRound();
+    Sound.swoosh();
+  });
+
+  document.getElementById('share-btn').addEventListener('click', () => {
+    const s = session.getFinalSummary();
+    const text = `🎨 ChromaFlash — Mode Classic\n${s.globalRank.emoji} ${s.globalRank.label}\nScore : ${s.total.toLocaleString()} / 25 000\n\nTeste ta perception colorimétrique !`;
+    copyScore(text);
+  });
+</script>
+</body>
+</html>

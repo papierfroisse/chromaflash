@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChromaFlash — Mode Survie 💀</title>
+  <link rel="stylesheet" href="css/design.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <style>
+    body { padding-top: 60px; min-height: 100dvh; display: flex; flex-direction: column; }
+
+    .survie-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--space-lg);
+      gap: var(--space-md);
+      max-width: 520px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Status bar */
+    .status-bar {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+    }
+
+    /* Level display */
+    .level-display {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    .level-num-big {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .level-tier {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    /* Event banner */
+    .event-banner {
+      width: 100%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+      padding: 10px var(--space-lg);
+      border-radius: var(--radius-full);
+      font-size: 0.875rem;
+      font-weight: 700;
+      text-align: center;
+      animation: fadeDown 0.4s var(--ease-spring) both;
+    }
+    .event-banner.show { display: flex; }
+    .event-banner.bonus     { background: rgba(52,211,153,0.15); color: #34D399; border: 1px solid rgba(52,211,153,0.3); }
+    .event-banner.blind     { background: rgba(248,113,113,0.15); color: #F87171; border: 1px solid rgba(248,113,113,0.3); }
+    .event-banner.speed     { background: rgba(251,191,36,0.15);  color: #FBBF24; border: 1px solid rgba(251,191,36,0.3); }
+    .event-banner.chaos     { background: rgba(167,139,250,0.15); color: #A78BFA; border: 1px solid rgba(167,139,250,0.3); }
+
+    /* Swatch */
+    .swatch-zone {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    /* Threshold indicator */
+    .threshold-bar-wrap {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--bg-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+    }
+    .threshold-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-sm);
+    }
+    .threshold-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .threshold-val {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.875rem;
+      font-weight: 700;
+    }
+
+    /* Input panel */
+    .survie-input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--bg-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+    }
+
+    .rgb-mini {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: var(--space-sm);
+    }
+
+    /* Result micro (shown inline, not overlay) */
+    .round-result-mini {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--bg-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      display: none;
+      animation: scaleIn 0.3s var(--ease-spring) both;
+    }
+    .round-result-mini.show { display: block; }
+
+    .result-split-mini {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      height: 80px;
+      margin-bottom: var(--space-md);
+    }
+    .rs-half {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 6px;
+    }
+    .rs-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: rgba(0,0,0,0.35);
+      color: rgba(255,255,255,0.8);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .result-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-sm);
+    }
+
+    /* Death screen */
+    .death-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--space-2xl) var(--space-lg);
+      text-align: center;
+    }
+    .death-screen.show { display: flex; }
+    .death-skull {
+      font-size: 5rem;
+      animation: popIn 0.5s var(--ease-spring);
+      margin-bottom: var(--space-lg);
+    }
+
+    /* Palier tier colors */
+    .tier-novice    { color: #6BCB77; }
+    .tier-apprenti  { color: #FFE66D; }
+    .tier-graphiste { color: #FF9F1C; }
+    .tier-expert    { color: #F87171; }
+    .tier-maitre    { color: #B388FF; }
+
+    /* Score history mini-chart */
+    .history-dots {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 32px;
+    }
+    .history-dot {
+      flex: 1;
+      border-radius: 2px;
+      background: var(--accent);
+      min-height: 4px;
+      max-width: 12px;
+      transition: height 0.3s;
+    }
+  </style>
+</head>
+<body>
+
+<header class="game-header">
+  <a href="index.html" class="back-btn">← Accueil</a>
+  <div class="flex items-center gap-md">
+    <div class="lives" id="lives-display">
+      <div class="life" id="life-1"></div>
+      <div class="life" id="life-2"></div>
+      <div class="life" id="life-3"></div>
+    </div>
+    <div class="timer-ring-wrapper" id="timer-wrapper">
+      <svg class="timer-ring" width="52" height="52" viewBox="0 0 52 52">
+        <circle class="timer-ring-bg" cx="26" cy="26" r="22"/>
+        <circle class="timer-ring-fill" id="timer-fill" cx="26" cy="26" r="22"/>
+      </svg>
+      <div class="timer-text" id="timer-text">30</div>
+    </div>
+  </div>
+  <div class="font-mono weight-700" id="header-score">0</div>
+</header>
+
+<div class="survie-area" id="survie-area">
+
+  <!-- STATUS BAR -->
+  <div class="status-bar anim-fadeDown">
+    <div class="level-display">
+      <div>
+        <div class="level-num-big" id="level-num">1</div>
+        <div class="level-tier" id="level-tier">🟢 NOVICE</div>
+      </div>
+    </div>
+    <div class="flex flex-col items-center gap-sm">
+      <div class="text-xs text-muted">Record</div>
+      <div class="font-mono text-sm weight-700" id="record-display">0</div>
+    </div>
+    <div class="flex flex-col items-center gap-sm">
+      <div class="text-xs text-muted">Round</div>
+      <div class="font-mono text-lg weight-700" id="round-num">1</div>
+    </div>
+    <div>
+      <div class="streak-badge" id="streak-display" style="opacity:0">🔥 0</div>
+    </div>
+  </div>
+
+  <!-- EVENT BANNER -->
+  <div class="event-banner" id="event-banner"></div>
+
+  <!-- SWATCH -->
+  <div class="swatch-zone anim-scaleIn">
+    <div class="swatch-label text-xs text-muted uppercase weight-700">Couleur cible</div>
+    <div class="swatch-bg" id="swatch-bg" style="padding:16px;border-radius:12px">
+      <div class="swatch" id="target-swatch" style="width:160px;height:160px"></div>
+    </div>
+    <div id="blind-overlay" class="text-center" style="display:none">
+      <div class="text-xs text-muted">⚠️ Mode Aveugle — couleur mémorisée ?</div>
+    </div>
+  </div>
+
+  <!-- THRESHOLD -->
+  <div class="threshold-bar-wrap w-full">
+    <div class="threshold-header">
+      <span class="threshold-label">Tolérance requise (ΔE max)</span>
+      <span class="threshold-val" id="threshold-val">≤ 18</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="threshold-fill" style="width:100%;transition:width 0.5s,background 0.3s"></div>
+    </div>
+    <div class="flex justify-between mt-sm">
+      <span class="text-xs text-muted">Facile</span>
+      <span class="text-xs text-muted">Impossible</span>
+    </div>
+  </div>
+
+  <!-- INPUT -->
+  <div class="survie-input">
+    <div class="tabs mb-md" id="survie-tabs">
+      <div class="tab active" data-tab="hex">HEX</div>
+      <div class="tab" data-tab="rgb">RGB</div>
+      <div class="tab" data-tab="sliders">🎚️</div>
+    </div>
+
+    <!-- HEX -->
+    <div class="tab-panel active" id="sp-hex">
+      <input type="text" class="input input-mono" id="hex-input" placeholder="#RRGGBB" maxlength="7" autocomplete="off">
+    </div>
+    <!-- RGB -->
+    <div class="tab-panel" id="sp-rgb">
+      <div class="rgb-mini">
+        <div class="channel-group">
+          <div class="channel-label" style="color:#F87171">R</div>
+          <input type="number" class="input font-mono" id="r-in" min="0" max="255" placeholder="0">
+        </div>
+        <div class="channel-group">
+          <div class="channel-label" style="color:#6BCB77">G</div>
+          <input type="number" class="input font-mono" id="g-in" min="0" max="255" placeholder="0">
+        </div>
+        <div class="channel-group">
+          <div class="channel-label" style="color:#4D96FF">B</div>
+          <input type="number" class="input font-mono" id="b-in" min="0" max="255" placeholder="0">
+        </div>
+      </div>
+    </div>
+    <!-- Sliders -->
+    <div class="tab-panel" id="sp-sliders">
+      <div class="flex flex-col gap-md">
+        <div class="slider-track">
+          <div class="slider-label-row"><span class="slider-label" style="color:#F87171">R</span><span id="sv-r" class="slider-value">128</span></div>
+          <input type="range" id="sl-r" min="0" max="255" value="128" style="--track-bg:linear-gradient(to right,#111,#F87171)">
+        </div>
+        <div class="slider-track">
+          <div class="slider-label-row"><span class="slider-label" style="color:#6BCB77">G</span><span id="sv-g" class="slider-value">128</span></div>
+          <input type="range" id="sl-g" min="0" max="255" value="128" style="--track-bg:linear-gradient(to right,#111,#6BCB77)">
+        </div>
+        <div class="slider-track">
+          <div class="slider-label-row"><span class="slider-label" style="color:#4D96FF">B</span><span id="sv-b" class="slider-value">128</span></div>
+          <input type="range" id="sl-b" min="0" max="255" value="128" style="--track-bg:linear-gradient(to right,#111,#4D96FF)">
+        </div>
+        <div id="sl-preview" style="height:36px;border-radius:8px;background:rgb(128,128,128);transition:background 0.05s"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-lg w-full mt-lg" id="validate-btn">VALIDER</button>
+  </div>
+
+  <!-- ROUND RESULT MINI -->
+  <div class="round-result-mini" id="round-result">
+    <div class="result-split-mini">
+      <div class="rs-half" id="rs-user"><span class="rs-label">Toi</span></div>
+      <div class="rs-half" id="rs-target"><span class="rs-label">Cible</span></div>
+    </div>
+    <div class="result-row">
+      <span class="text-sm text-muted">ΔE</span>
+      <span class="font-mono weight-700" id="rr-delta">—</span>
+    </div>
+    <div class="result-row">
+      <span class="text-sm text-muted">Score</span>
+      <span class="font-mono weight-700" id="rr-score">—</span>
+    </div>
+    <div class="result-row">
+      <span class="text-sm text-muted">Statut</span>
+      <span id="rr-status">—</span>
+    </div>
+    <div class="result-row" id="rr-life-row" style="display:none">
+      <span class="text-sm" style="color:#F87171">Vie perdue !</span>
+      <div class="lives" id="rr-lives"></div>
+    </div>
+    <button class="btn btn-primary w-full mt-md" id="next-round-btn">Continuer →</button>
+  </div>
+
+</div>
+
+<!-- DEATH SCREEN -->
+<div class="death-screen" id="death-screen">
+  <div class="death-skull">💀</div>
+  <div class="text-4xl weight-700 mb-sm">GAME OVER</div>
+  <div class="text-secondary mb-lg">Tu as tenu jusqu'au niveau <strong id="death-level">—</strong></div>
+
+  <div class="card text-center" style="width:100%;max-width:400px;margin-bottom:var(--space-lg)">
+    <div class="text-xs text-muted uppercase weight-700 mb-sm">Score final</div>
+    <div class="score-display" id="death-score">0</div>
+    <div class="mt-sm" id="death-record-badge"></div>
+    <div class="divider"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-sm);text-align:center">
+      <div>
+        <div class="text-xs text-muted">Rounds</div>
+        <div class="font-mono weight-700" id="death-rounds">—</div>
+      </div>
+      <div>
+        <div class="text-xs text-muted">Streak max</div>
+        <div class="font-mono weight-700" id="death-streak">—</div>
+      </div>
+      <div>
+        <div class="text-xs text-muted">ΔE moy.</div>
+        <div class="font-mono weight-700" id="death-avg-de">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex flex-col gap-sm" style="width:100%;max-width:400px">
+    <button class="btn btn-primary btn-lg w-full" id="restart-btn">Recommencer</button>
+    <a href="index.html" class="btn btn-ghost w-full">← Menu</a>
+    <button class="btn btn-ghost w-full" id="share-btn">📋 Partager</button>
+  </div>
+</div>
+
+<script type="module">
+  import {
+    randomColor, rgbToHex, hexToRgb, computeScore, getRank, rgbToLab, deltaE00
+  } from './js/color.js';
+  import { SurvivalSession } from './js/score.js';
+  import {
+    getSettings, getSwatchBgColor, Sound, animateCounter,
+    getDeltaLabel, getDeltaBarColor, showToast, launchConfetti, copyScore, updateTimerRing
+  } from './js/ui.js';
+
+  const settings = getSettings();
+
+  // ─── TIERS CONFIG ─────────────────────────────────────────────
+  const TIERS = [
+    { name: '🟢 NOVICE',    cls: 'tier-novice',    levels: [1,5],   time: 30, threshold: 18, diff: 'easy' },
+    { name: '🟡 APPRENTI',  cls: 'tier-apprenti',  levels: [6,10],  time: 25, threshold: 12, diff: 'normal' },
+    { name: '🔴 GRAPHISTE', cls: 'tier-graphiste', levels: [11,15], time: 20, threshold: 8,  diff: 'normal' },
+    { name: '🟣 EXPERT',    cls: 'tier-expert',    levels: [16,20], time: 15, threshold: 5,  diff: 'hard' },
+    { name: '⚫ MAÎTRE',    cls: 'tier-maitre',    levels: [21,99], time: 10, threshold: 3,  diff: 'expert' },
+  ];
+
+  const EVENTS = ['normal','normal','normal','normal','bonus','blind','speed','chaos'];
+
+  function getTier(level) {
+    return TIERS.find(t => level >= t.levels[0] && level <= t.levels[1]) || TIERS[TIERS.length - 1];
+  }
+
+  // ─── STATE ────────────────────────────────────────────────────
+  let session;
+  let targetColor;
+  let timerInterval;
+  let secondsLeft;
+  let currentEvent;
+  let roundHistory = []; // for avg ΔE
+  let canAnswer;
+  let maxStreak = 0;
+  let streak = 0;
+  let currentTab = 'hex';
+
+  // ─── DOM ──────────────────────────────────────────────────────
+  const swatchBgEl = document.getElementById('swatch-bg');
+  const targetSwatchEl = document.getElementById('target-swatch');
+  const levelNumEl = document.getElementById('level-num');
+  const levelTierEl = document.getElementById('level-tier');
+  const roundNumEl = document.getElementById('round-num');
+  const streakEl = document.getElementById('streak-display');
+  const recordEl = document.getElementById('record-display');
+  const timerFillEl = document.getElementById('timer-fill');
+  const timerTextEl = document.getElementById('timer-text');
+  const timerWrapperEl = document.getElementById('timer-wrapper');
+  const thresholdValEl = document.getElementById('threshold-val');
+  const thresholdFillEl = document.getElementById('threshold-fill');
+  const validateBtn = document.getElementById('validate-btn');
+  const eventBanner = document.getElementById('event-banner');
+  const roundResultEl = document.getElementById('round-result');
+  const deathScreenEl = document.getElementById('death-screen');
+  const survieAreaEl = document.getElementById('survie-area');
+
+  // ─── INIT ─────────────────────────────────────────────────────
+  swatchBgEl.style.background = getSwatchBgColor();
+  loadRecord();
+  startGame();
+
+  function startGame() {
+    session = new SurvivalSession();
+    roundHistory = []; streak = 0; maxStreak = 0;
+    deathScreenEl.classList.remove('show');
+    survieAreaEl.style.display = 'flex';
+    startRound();
+  }
+
+  function loadRecord() {
+    try {
+      const data = JSON.parse(localStorage.getItem('chromaflash_data') || '{}');
+      const rec = data?.records?.survival?.best || 0;
+      recordEl.textContent = rec.toLocaleString();
+    } catch {}
+  }
+
+  // ─── ROUND ────────────────────────────────────────────────────
+  function startRound() {
+    // Pick event (every 5 rounds)
+    const roundN = session.round + 1;
+    if (roundN % 5 === 0 && roundN > 1) {
+      const specialEvents = ['bonus','blind','speed','chaos'];
+      currentEvent = specialEvents[Math.floor(Math.random() * specialEvents.length)];
+    } else {
+      currentEvent = 'normal';
+    }
+
+    const tier = getTier(session.level);
+    targetColor = randomColor(tier.diff);
+    targetSwatchEl.style.backgroundColor = `rgb(${targetColor.r},${targetColor.g},${targetColor.b})`;
+
+    // Blind mode: hide after 2s
+    const blindOverlay = document.getElementById('blind-overlay');
+    if (currentEvent === 'blind') {
+      blindOverlay.style.display = 'none';
+      setTimeout(() => {
+        targetSwatchEl.style.backgroundColor = getSwatchBgColor();
+        blindOverlay.style.display = 'block';
+      }, 2000);
+    } else {
+      targetSwatchEl.style.backgroundColor = `rgb(${targetColor.r},${targetColor.g},${targetColor.b})`;
+      blindOverlay.style.display = 'none';
+    }
+
+    // Show event banner
+    if (currentEvent !== 'normal') {
+      const eventDefs = {
+        bonus: { cls: 'bonus', text: '🎁 ROUND BONUS — Tolérance ignorée, vie récupérable !' },
+        blind: { cls: 'blind', text: '👁️ MODE AVEUGLE — Mémorise avant que ça disparaisse !' },
+        speed: { cls: 'speed', text: '⚡ SPEED ROUND — 5 secondes ! Score ×3 !' },
+        chaos: { cls: 'chaos', text: '🔀 CHAOS — Mode de saisie aléatoire !' },
+      };
+      const def = eventDefs[currentEvent];
+      eventBanner.className = `event-banner show ${def.cls}`;
+      eventBanner.textContent = def.text;
+    } else {
+      eventBanner.className = 'event-banner';
+    }
+
+    // Force tab for chaos
+    if (currentEvent === 'chaos') {
+      const forceTabs = ['hex','rgb','sliders'];
+      const forced = forceTabs[Math.floor(Math.random() * forceTabs.length)];
+      switchTab(forced);
+    }
+
+    // Update UI
+    levelNumEl.textContent = session.level;
+    const tierInfo = getTier(session.level);
+    levelTierEl.textContent = tierInfo.name;
+    levelTierEl.className = `level-tier ${tierInfo.cls}`;
+    roundNumEl.textContent = session.round + 1;
+
+    // Threshold bar
+    const threshold = session.getThreshold();
+    thresholdValEl.textContent = `≤ ${threshold.toFixed(1)}`;
+    const pct = Math.max(5, 100 - (threshold / 20) * 100);
+    thresholdFillEl.style.width = `${pct}%`;
+    thresholdFillEl.style.backgroundColor = getDeltaBarColor(threshold);
+
+    // Update lives
+    updateLivesDisplay(session.lives);
+
+    // Reset
+    canAnswer = true;
+    roundResultEl.classList.remove('show');
+    clearInputs();
+
+    // Timer
+    const timeLimit = currentEvent === 'speed' ? 5 : tierInfo.time;
+    startTimer(timeLimit);
+  }
+
+  function startTimer(seconds) {
+    clearInterval(timerInterval);
+    secondsLeft = seconds;
+    updateTimerRing(timerFillEl, timerTextEl, secondsLeft, seconds);
+    timerWrapperEl.classList.remove('timer-urgent');
+
+    timerInterval = setInterval(() => {
+      secondsLeft = Math.max(0, secondsLeft - 1);
+      updateTimerRing(timerFillEl, timerTextEl, secondsLeft, seconds);
+      if (secondsLeft <= 5) timerWrapperEl.classList.add('timer-urgent');
+      if (secondsLeft <= 0) {
+        clearInterval(timerInterval);
+        if (canAnswer) { canAnswer = false; processResult({ r:0, g:0, b:0 }, true); }
+      }
+    }, 1000);
+  }
+
+  // ─── VALIDATE ────────────────────────────────────────────────
+  validateBtn.addEventListener('click', () => {
+    if (!canAnswer) return;
+    const userRgb = getUserRgb();
+    if (!userRgb) {
+      validateBtn.classList.add('shake');
+      setTimeout(() => validateBtn.classList.remove('shake'), 400);
+      showToast('Entre une couleur !', 'error');
+      Sound.wrong();
+      return;
+    }
+    canAnswer = false;
+    clearInterval(timerInterval);
+    processResult(userRgb, false);
+  });
+
+  function processResult(userRgb, timedOut) {
+    const tier = getTier(session.level);
+    let scoreMultiplier = currentEvent === 'speed' ? 3 : 1;
+
+    const { score, deltaE } = computeScore(targetColor, userRgb, 5000);
+    const actualScore = Math.round(score * scoreMultiplier);
+    roundHistory.push({ score: actualScore, de: deltaE });
+
+    const threshold = session.getThreshold();
+    const passed = !timedOut && deltaE <= threshold;
+    const rank = getRank(score, 5000);
+
+    // Update session
+    let lifeChange = 0;
+    if (currentEvent === 'bonus') {
+      if (passed) { session.lives = Math.min(3, session.lives + 1); lifeChange = 1; }
+    } else if (!passed) {
+      session.lives--;
+      lifeChange = -1;
+    }
+    session.score += actualScore;
+    animateCounter(document.getElementById('header-score'), session.score - actualScore, session.score, 400);
+
+    // Streak
+    if (passed) {
+      streak++;
+      maxStreak = Math.max(maxStreak, streak);
+      if (streak % 3 === 0) session.level++;
+    } else {
+      streak = 0;
+    }
+    session.round++;
+
+    // Update streak badge
+    if (streak >= 2) {
+      streakEl.style.opacity = '1';
+      streakEl.textContent = `🔥 ${streak}`;
+    } else {
+      streakEl.style.opacity = '0';
+    }
+
+    // Show result
+    showRoundResult(userRgb, actualScore, deltaE, passed, rank, lifeChange, timedOut);
+
+    if (session.lives <= 0) {
+      setTimeout(() => showDeath(), 1200);
+      return;
+    }
+
+    // Level up check
+    if (streak > 0 && streak % 3 === 0) {
+      Sound.levelUp();
+    }
+  }
+
+  function showRoundResult(userRgb, score, de, passed, rank, lifeChange, timedOut) {
+    document.getElementById('rs-user').style.backgroundColor = `rgb(${userRgb.r},${userRgb.g},${userRgb.b})`;
+    document.getElementById('rs-target').style.backgroundColor = `rgb(${targetColor.r},${targetColor.g},${targetColor.b})`;
+    document.getElementById('rr-delta').textContent = timedOut ? 'Temps écoulé !' : `${de.toFixed(2)} — ${getDeltaLabel(de)}`;
+    document.getElementById('rr-score').textContent = `+${score.toLocaleString()} pts`;
+
+    const statusEl = document.getElementById('rr-status');
+    if (timedOut) {
+      statusEl.innerHTML = `<span style="color:#F87171">⏱️ Temps écoulé</span>`;
+    } else if (passed) {
+      statusEl.innerHTML = `<span class="rank-badge ${rank.class}">${rank.emoji} ${rank.label}</span>`;
+    } else {
+      statusEl.innerHTML = `<span style="color:#F87171">❌ Trop loin (ΔE ${de.toFixed(1)} > ${session.getThreshold().toFixed(1)})</span>`;
+    }
+
+    const lifeRow = document.getElementById('rr-life-row');
+    if (lifeChange < 0) {
+      lifeRow.style.display = 'flex';
+      updateLivesDisplay(session.lives, 'rr-lives');
+    } else {
+      lifeRow.style.display = 'none';
+    }
+
+    roundResultEl.classList.add('show');
+
+    if (passed) { Sound.good(); if (rank.class === 'rank-perfect') launchConfetti(30); }
+    else { Sound.loseLife(); }
+
+    updateLivesDisplay(session.lives);
+  }
+
+  document.getElementById('next-round-btn').addEventListener('click', () => {
+    if (session.lives <= 0) return;
+    Sound.swoosh();
+    startRound();
+  });
+
+  // ─── DEATH SCREEN ────────────────────────────────────────────
+  function showDeath() {
+    clearInterval(timerInterval);
+    survieAreaEl.style.display = 'none';
+    deathScreenEl.classList.add('show');
+
+    Sound.gameOver();
+
+    const avgDe = roundHistory.length > 0
+      ? roundHistory.reduce((s,r) => s + r.de, 0) / roundHistory.length
+      : 0;
+
+    animateCounter(document.getElementById('death-score'), 0, session.score, 1200);
+    document.getElementById('death-level').textContent = session.level;
+    document.getElementById('death-rounds').textContent = session.round;
+    document.getElementById('death-streak').textContent = maxStreak;
+    document.getElementById('death-avg-de').textContent = avgDe.toFixed(1);
+
+    // Save
+    try {
+      const data = JSON.parse(localStorage.getItem('chromaflash_data') || '{}');
+      if (!data.records) data.records = {};
+      const isRecord = !data.records.survival || session.score > data.records.survival.best;
+      if (isRecord) {
+        data.records.survival = { best: session.score, level: session.level, date: new Date().toISOString() };
+        document.getElementById('death-record-badge').innerHTML = `<span class="rank-badge rank-perfect">🏆 NOUVEAU RECORD !</span>`;
+        launchConfetti(60);
+      }
+      localStorage.setItem('chromaflash_data', JSON.stringify(data));
+      recordEl.textContent = data.records.survival.best.toLocaleString();
+    } catch {}
+  }
+
+  document.getElementById('restart-btn').addEventListener('click', () => {
+    document.getElementById('death-record-badge').innerHTML = '';
+    startGame();
+    Sound.swoosh();
+  });
+
+  document.getElementById('share-btn').addEventListener('click', () => {
+    const tier = getTier(session.level);
+    const text = `💀 ChromaFlash — Mode Survie\nNiveau ${session.level} ${tier.name}\nScore : ${session.score.toLocaleString()} pts\nRounds : ${session.round} · Streak max : ${maxStreak}\n\nTeste ta survie colorimétrique !`;
+    copyScore(text);
+  });
+
+  // ─── LIVES UI ────────────────────────────────────────────────
+  function updateLivesDisplay(lives, containerId = 'lives-display') {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.querySelectorAll('.life').forEach((life, i) => {
+      life.classList.toggle('lost', i >= lives);
+    });
+  }
+
+  // ─── INPUT HELPERS ────────────────────────────────────────────
+  function getUserRgb() {
+    try {
+      switch(currentTab) {
+        case 'hex': {
+          let v = document.getElementById('hex-input').value.trim();
+          if (!v.startsWith('#')) v = '#' + v;
+          if (!/^#[0-9a-fA-F]{6}$/.test(v)) return null;
+          return hexToRgb(v);
+        }
+        case 'rgb': {
+          const r = +document.getElementById('r-in').value;
+          const g = +document.getElementById('g-in').value;
+          const b = +document.getElementById('b-in').value;
+          if ([r,g,b].some(isNaN)) return null;
+          return { r: Math.max(0,Math.min(255,r)), g: Math.max(0,Math.min(255,g)), b: Math.max(0,Math.min(255,b)) };
+        }
+        case 'sliders': {
+          return {
+            r: +document.getElementById('sl-r').value,
+            g: +document.getElementById('sl-g').value,
+            b: +document.getElementById('sl-b').value,
+          };
+        }
+      }
+    } catch { return null; }
+    return null;
+  }
+
+  function clearInputs() {
+    document.getElementById('hex-input').value = '';
+    ['r-in','g-in','b-in'].forEach(id => { document.getElementById(id).value = ''; });
+    ['sl-r','sl-g','sl-b'].forEach(id => { document.getElementById(id).value = 128; });
+    document.getElementById('sv-r').textContent = '128';
+    document.getElementById('sv-g').textContent = '128';
+    document.getElementById('sv-b').textContent = '128';
+    document.getElementById('sl-preview').style.backgroundColor = 'rgb(128,128,128)';
+  }
+
+  // Sliders sync
+  ['r','g','b'].forEach(ch => {
+    document.getElementById(`sl-${ch}`).addEventListener('input', () => {
+      document.getElementById(`sv-${ch}`).textContent = document.getElementById(`sl-${ch}`).value;
+      const r = +document.getElementById('sl-r').value;
+      const g = +document.getElementById('sl-g').value;
+      const b = +document.getElementById('sl-b').value;
+      document.getElementById('sl-preview').style.backgroundColor = `rgb(${r},${g},${b})`;
+    });
+  });
+
+  // Tabs
+  document.querySelectorAll('#survie-tabs .tab').forEach(tab => {
+    tab.addEventListener('click', () => { switchTab(tab.dataset.tab); Sound.click(); });
+  });
+
+  function switchTab(tabId) {
+    document.querySelectorAll('#survie-tabs .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+    document.querySelectorAll('.survie-input .tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(`sp-${tabId}`)?.classList.add('active');
+    currentTab = tabId;
+  }
+</script>
+</body>
+</html>

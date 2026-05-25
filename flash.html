@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChromaFlash — Mode Flash ⚡</title>
+  <link rel="stylesheet" href="css/design.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <style>
+    body { min-height: 100dvh; display: flex; flex-direction: column; padding-top: 60px; }
+    .game-wrap {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: var(--space-lg);
+      gap: var(--space-lg);
+    }
+    .mini-card {
+      width: 100%; max-width: 480px;
+      background: var(--bg-card);
+      border: 1px solid var(--bg-border);
+      border-radius: var(--radius-xl);
+      padding: var(--space-xl);
+      animation: scaleIn 0.35s var(--ease-spring) both;
+    }
+
+    /* mini-game 1: SPOT IT */
+    .spot-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin: var(--space-lg) 0;
+    }
+    .spot-cell {
+      aspect-ratio: 1;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.15s;
+      border: 2px solid transparent;
+    }
+    .spot-cell:hover { transform: scale(1.04); }
+    .spot-cell.correct { border-color: #34D399; box-shadow: 0 0 0 3px rgba(52,211,153,0.25); }
+    .spot-cell.wrong   { border-color: #F87171; box-shadow: 0 0 0 3px rgba(248,113,113,0.25); }
+
+    /* mini-game 2: NAME RUSH */
+    .name-choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-sm);
+      margin-top: var(--space-lg);
+    }
+
+    /* mini-game 3: HEX BLITZ */
+    .hex-show {
+      font-family: 'Space Mono', monospace;
+      font-size: 2rem;
+      font-weight: 700;
+      text-align: center;
+      padding: var(--space-xl) 0;
+      letter-spacing: 0.05em;
+      animation: flash 0.5s 2s ease both;
+    }
+    .hex-countdown {
+      text-align: center;
+      font-size: 3rem;
+      font-weight: 700;
+      font-family: 'Space Mono', monospace;
+      animation: popIn 0.3s var(--ease-spring);
+    }
+
+    /* mini-game 4: RGB SNAP */
+    .snap-sliders { display: flex; flex-direction: column; gap: var(--space-md); }
+    .snap-preview {
+      height: 60px;
+      border-radius: var(--radius-md);
+      transition: background 0.05s;
+      margin-top: var(--space-md);
+    }
+
+    /* mini-game 5: WARM OR COOL */
+    .wc-choices {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-sm);
+      margin-top: var(--space-lg);
+    }
+
+    /* mini-game 6: COMPLEMENT */
+    .complement-choices {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-sm);
+      margin-top: var(--space-lg);
+    }
+    .complement-cell {
+      aspect-ratio: 2/1;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.1s, border-color 0.15s;
+    }
+    .complement-cell:hover { transform: scale(1.03); }
+    .complement-cell.correct { border-color: #34D399; }
+    .complement-cell.wrong   { border-color: #F87171; }
+
+    /* mini-game 7: DARKER OR LIGHTER */
+    .dl-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-sm);
+      margin: var(--space-lg) 0;
+    }
+    .dl-cell {
+      aspect-ratio: 1.2;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.1s, border-color 0.15s;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .dl-cell:hover { transform: scale(1.03); }
+
+    /* mini-game 8: PERFECT MATCH */
+    .pm-input-wrap { margin-top: var(--space-lg); }
+
+    /* Transition overlay */
+    .flash-overlay {
+      position: fixed; inset: 0;
+      background: var(--bg-void);
+      z-index: 500;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: var(--space-md);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .flash-overlay.show { opacity: 1; pointer-events: all; }
+
+    .mini-num-big {
+      font-size: 6rem; font-weight: 700;
+      font-family: 'Space Mono', monospace;
+      line-height: 1;
+      animation: popIn 0.4s var(--ease-spring);
+    }
+    .mini-name-big {
+      font-size: 1.25rem; font-weight: 700;
+      color: var(--text-secondary);
+      animation: fadeUp 0.3s 0.1s var(--ease-out) both;
+      text-align: center;
+    }
+    .mini-score-flash {
+      font-size: 2rem; font-weight: 700;
+      font-family: 'Space Mono', monospace;
+      animation: scoreCount 0.5s var(--ease-spring) both;
+    }
+
+    /* Final screen */
+    .final-flash { display: none; }
+    .final-flash.show { display: flex; flex-direction: column; align-items: center; padding: var(--space-lg); }
+
+    .rank-letter {
+      font-size: 6rem; font-weight: 700;
+      font-family: 'Space Mono', monospace;
+      line-height: 1;
+      animation: popIn 0.5s var(--ease-spring);
+    }
+    .rank-letter.S { color: #FFD700; }
+    .rank-letter.A { color: #A78BFA; }
+    .rank-letter.B { color: #34D399; }
+    .rank-letter.C { color: #60A5FA; }
+    .rank-letter.D { color: #FBBF24; }
+    .rank-letter.F { color: #F87171; }
+
+    .minigame-scores {
+      display: flex; flex-direction: column;
+      gap: 6px; width: 100%; max-width: 400px;
+      margin: var(--space-lg) 0;
+    }
+    .mg-score-row {
+      display: flex; align-items: center; gap: var(--space-md);
+      background: var(--bg-input); border-radius: var(--radius-md);
+      padding: 10px var(--space-md);
+    }
+    .mg-score-icon { font-size: 1.1rem; }
+    .mg-score-name { flex:1; font-size: 0.875rem; font-weight: 500; }
+    .mg-score-pts { font-family: 'Space Mono', monospace; font-size: 0.9rem; font-weight: 700; }
+    .mg-score-check { font-size: 1rem; }
+  </style>
+</head>
+<body>
+
+<header class="game-header">
+  <a href="index.html" class="back-btn">← Accueil</a>
+  <div class="flex items-center gap-sm">
+    <div class="progress-bar" style="width:120px">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <span class="text-xs text-muted" id="progress-label">1/8</span>
+  </div>
+  <div class="flex items-center gap-sm">
+    <div class="timer-ring-wrapper" id="timer-wrapper">
+      <svg class="timer-ring" width="52" height="52" viewBox="0 0 52 52">
+        <circle class="timer-ring-bg" cx="26" cy="26" r="22"/>
+        <circle class="timer-ring-fill" id="timer-fill" cx="26" cy="26" r="22"/>
+      </svg>
+      <div class="timer-text" id="timer-text">10</div>
+    </div>
+    <div class="font-mono weight-700" id="total-pts">0</div>
+  </div>
+</header>
+
+<!-- MINI-GAME AREA (populated by JS) -->
+<div class="game-wrap" id="game-area">
+  <!-- injected dynamically -->
+</div>
+
+<!-- TRANSITION OVERLAY -->
+<div class="flash-overlay" id="flash-overlay">
+  <div class="mini-num-big" id="overlay-num">1</div>
+  <div class="mini-name-big" id="overlay-name">SPOT IT</div>
+  <div class="mini-score-flash" id="overlay-score" style="display:none"></div>
+</div>
+
+<!-- FINAL SCREEN -->
+<div class="final-flash" id="final-screen">
+  <div class="container" style="max-width:480px; width:100%;">
+    <div class="card text-center">
+      <div class="rank-letter" id="final-rank-letter">S</div>
+      <div class="text-2xl weight-700 mt-sm" id="final-rank-text">RANG S</div>
+      <div class="text-secondary text-sm mt-sm mb-lg">Session terminée !</div>
+
+      <div class="score-display" id="final-total">0</div>
+      <div class="score-max mb-lg">/ 8 000</div>
+
+      <div class="minigame-scores" id="mg-scores-list"></div>
+
+      <div class="flex flex-col gap-sm">
+        <button class="btn btn-primary btn-lg w-full" id="replay-btn">Rejouer</button>
+        <a href="index.html" class="btn btn-ghost w-full">← Menu</a>
+        <button class="btn btn-ghost w-full" id="share-btn">📋 Copier</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import {
+    randomColor, rgbToHex, hexToRgb, rgbToLab, deltaE00, hslToRgb, rgbToHsl,
+    findClosestColorName, getColorCandidates, computeScore
+  } from './js/color.js';
+  import {
+    getSettings, getSwatchBgColor, Sound, animateCounter,
+    showToast, launchConfetti, playSoundForScore, copyScore
+  } from './js/ui.js';
+  import { getGlobalStats } from './js/score.js';
+
+  const settings = getSettings();
+
+  // ─── MINI GAME DEFINITIONS ────────────────────────────────────
+  const MINI_GAMES = [
+    { id:'spot',       name:'SPOT IT',       icon:'👁️',  maxPts: 1000, time: 8 },
+    { id:'name',       name:'NAME RUSH',     icon:'🏷️',  maxPts: 1000, time: 8 },
+    { id:'hex',        name:'HEX BLITZ',     icon:'💻',  maxPts: 1000, time: 10 },
+    { id:'snap',       name:'RGB SNAP',      icon:'🎚️',  maxPts: 1000, time: 12 },
+    { id:'warmcool',   name:'CHAUD OU FROID',icon:'🌡️',  maxPts: 1000, time: 5 },
+    { id:'complement', name:'COMPLÉMENT',    icon:'🔵',  maxPts: 1000, time: 8 },
+    { id:'dark',       name:'+ SOMBRE',      icon:'🌑',  maxPts: 1000, time: 6 },
+    { id:'match',      name:'PERFECT MATCH', icon:'🎯',  maxPts: 1000, time: 12 },
+  ];
+
+  // Speed scaling: each game is faster
+  let mgIndex = 0;
+  let totalPts = 0;
+  let gameScores = [];
+  let timerInterval = null;
+  let secondsLeft = 0;
+  let canAnswer = true;
+
+  const gameArea = document.getElementById('game-area');
+  const timerFill = document.getElementById('timer-fill');
+  const timerText = document.getElementById('timer-text');
+  const timerWrapper = document.getElementById('timer-wrapper');
+  const totalPtsEl = document.getElementById('total-pts');
+  const progressFill = document.getElementById('progress-fill');
+  const progressLabel = document.getElementById('progress-label');
+
+  // ─── GAME FLOW ────────────────────────────────────────────────
+  function startGame() {
+    mgIndex = 0; totalPts = 0; gameScores = [];
+    document.getElementById('final-screen').classList.remove('show');
+    gameArea.style.display = 'flex';
+    showTransition(0, () => playMiniGame(0));
+  }
+
+  function showTransition(idx, cb) {
+    const overlay = document.getElementById('flash-overlay');
+    const numEl = document.getElementById('overlay-num');
+    const nameEl = document.getElementById('overlay-name');
+    const scoreEl = document.getElementById('overlay-score');
+
+    scoreEl.style.display = 'none';
+    numEl.textContent = idx + 1;
+    nameEl.textContent = MINI_GAMES[idx].icon + ' ' + MINI_GAMES[idx].name;
+
+    // If previous score
+    if (idx > 0 && gameScores[idx-1] !== undefined) {
+      scoreEl.style.display = 'block';
+      scoreEl.textContent = '+' + gameScores[idx-1];
+    }
+
+    overlay.classList.add('show');
+    Sound.swoosh();
+    setTimeout(() => {
+      overlay.classList.remove('show');
+      cb();
+    }, 1500);
+  }
+
+  function playMiniGame(idx) {
+    if (idx >= MINI_GAMES.length) { showFinal(); return; }
+    const mg = MINI_GAMES[idx];
+    progressFill.style.width = `${((idx) / MINI_GAMES.length) * 100}%`;
+    progressLabel.textContent = `${idx+1}/${MINI_GAMES.length}`;
+    canAnswer = true;
+
+    // Speed scales with index
+    const timeScale = Math.max(0.6, 1 - idx * 0.05);
+    const time = Math.round(mg.time * timeScale);
+
+    // Build mini game
+    gameArea.innerHTML = '';
+    const builders = {
+      spot:       buildSpot,
+      name:       buildName,
+      hex:        buildHex,
+      snap:       buildSnap,
+      warmcool:   buildWarmCool,
+      complement: buildComplement,
+      dark:       buildDark,
+      match:      buildMatch,
+    };
+    builders[mg.id](mg, time);
+
+    startTimer(time);
+  }
+
+  function startTimer(seconds) {
+    clearInterval(timerInterval);
+    secondsLeft = seconds;
+    const CIRC = 138.23;
+    timerFill.style.strokeDashoffset = 0;
+    timerText.textContent = seconds;
+    timerWrapper.classList.remove('timer-urgent');
+
+    timerInterval = setInterval(() => {
+      secondsLeft--;
+      const progress = secondsLeft / seconds;
+      timerFill.style.strokeDashoffset = CIRC * (1 - progress);
+      timerText.textContent = secondsLeft;
+
+      if (progress < 0.4) timerFill.style.stroke = '#F87171';
+      else if (progress < 0.6) timerFill.style.stroke = '#FBBF24';
+      else timerFill.style.stroke = 'var(--accent)';
+
+      if (secondsLeft <= 3) timerWrapper.classList.add('timer-urgent');
+      if (secondsLeft <= 0) {
+        clearInterval(timerInterval);
+        if (canAnswer) { canAnswer = false; onMiniGameEnd(0); }
+      }
+    }, 1000);
+  }
+
+  function onMiniGameEnd(score) {
+    clearInterval(timerInterval);
+    gameScores.push(score);
+    totalPts += score;
+    animateCounter(totalPtsEl, totalPts - score, totalPts, 400);
+    playSoundForScore(score, MINI_GAMES[mgIndex].maxPts);
+    mgIndex++;
+
+    setTimeout(() => {
+      if (mgIndex < MINI_GAMES.length) {
+        showTransition(mgIndex, () => playMiniGame(mgIndex));
+      } else {
+        showFinal();
+      }
+    }, 800);
+  }
+
+  // ─── MINI-GAME 1: SPOT IT ─────────────────────────────────────
+  function buildSpot(mg, time) {
+    const base = randomColor(settings.difficulty);
+    // Generate odd one out: slightly shifted
+    const deltaTarget = settings.difficulty === 'easy' ? 15 : settings.difficulty === 'hard' ? 4 : 8;
+    const oddIdx = Math.floor(Math.random() * 9);
+
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-lg">Clique sur le carré qui est <strong>légèrement différent</strong> des autres.</p>
+      <div class="spot-grid" id="spot-grid"></div>
+    `;
+    gameArea.appendChild(card);
+
+    const grid = document.getElementById('spot-grid');
+    for (let i = 0; i < 9; i++) {
+      const isOdd = i === oddIdx;
+      let r, g, b;
+      if (isOdd) {
+        // Generate a color close but slightly different
+        const hsl = rgbToHsl(base);
+        const shift = deltaTarget * (Math.random() > 0.5 ? 1 : -1);
+        r = Math.max(0, Math.min(255, base.r + Math.round(shift)));
+        g = Math.max(0, Math.min(255, base.g + Math.round(shift * 0.7)));
+        b = Math.max(0, Math.min(255, base.b + Math.round(shift * 0.5)));
+      } else {
+        // Small jitter for "same" cells
+        const j = 2;
+        r = Math.max(0, Math.min(255, base.r + Math.round((Math.random()-0.5)*j)));
+        g = Math.max(0, Math.min(255, base.g + Math.round((Math.random()-0.5)*j)));
+        b = Math.max(0, Math.min(255, base.b + Math.round((Math.random()-0.5)*j)));
+      }
+      const cell = document.createElement('div');
+      cell.className = 'spot-cell';
+      cell.style.backgroundColor = `rgb(${r},${g},${b})`;
+      cell.dataset.idx = i;
+      cell.addEventListener('click', () => {
+        if (!canAnswer) return;
+        canAnswer = false;
+        if (isOdd) {
+          cell.classList.add('correct');
+          Sound.good();
+          onMiniGameEnd(mg.maxPts);
+        } else {
+          cell.classList.add('wrong');
+          document.querySelectorAll('.spot-cell')[oddIdx].classList.add('correct');
+          Sound.wrong();
+          onMiniGameEnd(0);
+        }
+      });
+      grid.appendChild(cell);
+    }
+  }
+
+  // ─── MINI-GAME 2: NAME RUSH ────────────────────────────────────
+  function buildName(mg, time) {
+    const target = randomColor(settings.difficulty);
+    const { choices, correct } = getColorCandidates(target, 4);
+    const swatchBg = getSwatchBgColor();
+
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary">Quel est le nom de cette couleur ?</p>
+      <div style="display:flex;justify-content:center;margin:16px 0">
+        <div style="background:${swatchBg};padding:16px;border-radius:12px">
+          <div style="width:120px;height:80px;background:rgb(${target.r},${target.g},${target.b});border-radius:8px"></div>
+        </div>
+      </div>
+      <div class="name-choices" id="name-choices"></div>
+    `;
+    gameArea.appendChild(card);
+
+    const container = document.getElementById('name-choices');
+    choices.forEach(name => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = name;
+      btn.style.fontFamily = 'Space Mono, monospace';
+      btn.addEventListener('click', () => {
+        if (!canAnswer) return;
+        canAnswer = false;
+        const isCorrect = name === correct;
+        btn.classList.add(isCorrect ? 'correct' : 'wrong');
+        if (!isCorrect) {
+          container.querySelectorAll('.choice-btn').forEach(b => {
+            if (b.textContent === correct) b.classList.add('correct');
+          });
+        }
+        if (isCorrect) { Sound.good(); onMiniGameEnd(mg.maxPts); }
+        else { Sound.wrong(); onMiniGameEnd(0); }
+      });
+      container.appendChild(btn);
+    });
+  }
+
+  // ─── MINI-GAME 3: HEX BLITZ ────────────────────────────────────
+  function buildHex(mg, time) {
+    const target = randomColor(settings.difficulty);
+    const hex = rgbToHex(target).toUpperCase();
+    let phase = 'show'; // show → hidden → input
+
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary" id="hex-instruction">Mémorise ce code HEX !</p>
+      <div id="hex-show-phase">
+        <div style="display:flex;justify-content:center;margin:12px 0">
+          <div style="background:${getSwatchBgColor()};padding:12px;border-radius:10px">
+            <div style="width:100px;height:60px;background:rgb(${target.r},${target.g},${target.b});border-radius:8px"></div>
+          </div>
+        </div>
+        <div class="hex-show" style="color:rgb(${target.r},${target.g},${target.b})">${hex}</div>
+        <div class="text-center text-secondary text-sm" id="show-countdown">Mémorise dans <strong id="sc">3</strong>s…</div>
+      </div>
+      <div id="hex-input-phase" style="display:none">
+        <input type="text" class="input input-mono mt-lg" id="hex-recall" placeholder="#??????" maxlength="7" autocomplete="off">
+        <button class="btn btn-primary w-full mt-md" id="hex-submit">VALIDER</button>
+      </div>
+    `;
+    gameArea.appendChild(card);
+
+    // Countdown before hiding
+    let countdown = 3;
+    clearInterval(timerInterval);
+    timerText.textContent = '…';
+    const showTimer = setInterval(() => {
+      countdown--;
+      const scEl = document.getElementById('sc');
+      if (scEl) scEl.textContent = countdown;
+      if (countdown <= 0) {
+        clearInterval(showTimer);
+        document.getElementById('hex-show-phase').style.display = 'none';
+        document.getElementById('hex-input-phase').style.display = 'block';
+        document.getElementById('hex-instruction').textContent = 'Retape le code HEX de mémoire !';
+        document.getElementById('hex-recall').focus();
+        startTimer(time);
+      }
+    }, 1000);
+
+    document.getElementById('hex-submit').addEventListener('click', () => {
+      if (!canAnswer) return;
+      let val = document.getElementById('hex-recall').value.trim();
+      if (!val.startsWith('#')) val = '#' + val;
+      const userRgb = hexToRgb(val);
+      if (!userRgb) { showToast('HEX invalide', 'error'); return; }
+      canAnswer = false;
+      const { score } = computeScore(target, userRgb, mg.maxPts);
+      if (score >= mg.maxPts * 0.8) Sound.good(); else Sound.wrong();
+      onMiniGameEnd(score);
+    });
+  }
+
+  // ─── MINI-GAME 4: RGB SNAP ────────────────────────────────────
+  function buildSnap(mg, time) {
+    const target = randomColor(settings.difficulty);
+
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-md">Ajuste les curseurs pour approcher la couleur cible.</p>
+      <div style="display:flex;justify-content:center;margin-bottom:12px">
+        <div style="background:${getSwatchBgColor()};padding:12px;border-radius:10px">
+          <div style="width:120px;height:60px;background:rgb(${target.r},${target.g},${target.b});border-radius:8px"></div>
+        </div>
+      </div>
+      <div class="snap-sliders">
+        <div class="slider-track">
+          <div class="slider-label-row"><span class="slider-label" style="color:#F87171">R</span><span id="sv-r" class="slider-value">128</span></div>
+          <input type="range" id="sn-r" min="0" max="255" value="128" style="--track-bg:linear-gradient(to right,#111,#F87171)">
+        </div>
+        <div class="slider-track">
+          <div class="slider-label-row"><span class="slider-label" style="color:#6BCB77">G</span><span id="sv-g" class="slider-value">128</span></div>
+          <input type="range" id="sn-g" min="0" max="255" value="128" style="--track-bg:linear-gradient(to right,#111,#6BCB77)">
+        </div>
+        <div class="slider-track">
+          <div class="slider-label-row"><span class="slider-label" style="color:#4D96FF">B</span><span id="sv-b" class="slider-value">128</span></div>
+          <input type="range" id="sn-b" min="0" max="255" value="128" style="--track-bg:linear-gradient(to right,#111,#4D96FF)">
+        </div>
+      </div>
+      <div class="snap-preview" id="sn-preview" style="background:rgb(128,128,128)"></div>
+      <button class="btn btn-primary w-full mt-md" id="sn-submit">VALIDER</button>
+    `;
+    gameArea.appendChild(card);
+
+    ['r','g','b'].forEach(ch => {
+      const sl = document.getElementById(`sn-${ch}`);
+      sl.addEventListener('input', () => {
+        document.getElementById(`sv-${ch}`).textContent = sl.value;
+        const r = +document.getElementById('sn-r').value;
+        const g = +document.getElementById('sn-g').value;
+        const b = +document.getElementById('sn-b').value;
+        document.getElementById('sn-preview').style.backgroundColor = `rgb(${r},${g},${b})`;
+      });
+    });
+
+    document.getElementById('sn-submit').addEventListener('click', () => {
+      if (!canAnswer) return;
+      canAnswer = false;
+      const userRgb = {
+        r: +document.getElementById('sn-r').value,
+        g: +document.getElementById('sn-g').value,
+        b: +document.getElementById('sn-b').value,
+      };
+      const { score } = computeScore(target, userRgb, mg.maxPts);
+      if (score >= mg.maxPts * 0.7) Sound.good(); else Sound.wrong();
+      onMiniGameEnd(score);
+    });
+  }
+
+  // ─── MINI-GAME 5: WARM OR COOL ────────────────────────────────
+  function buildWarmCool(mg, time) {
+    // Generate a color with clear warm/neutral/cool tendency
+    const types = ['warm','neutral','cool'];
+    const type = types[Math.floor(Math.random() * 3)];
+    let target;
+    if (type === 'warm') {
+      // High R, lower B
+      target = { r: 160+Math.floor(Math.random()*80), g: 80+Math.floor(Math.random()*80), b: 20+Math.floor(Math.random()*60) };
+    } else if (type === 'cool') {
+      target = { r: 20+Math.floor(Math.random()*60), g: 80+Math.floor(Math.random()*80), b: 160+Math.floor(Math.random()*80) };
+    } else {
+      const v = 100+Math.floor(Math.random()*100);
+      target = { r:v+Math.floor(Math.random()*20), g:v+Math.floor(Math.random()*20), b:v+Math.floor(Math.random()*20) };
+    }
+
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary">Cette couleur est-elle <strong>chaude, neutre ou froide</strong> ?</p>
+      <div style="display:flex;justify-content:center;margin:16px 0">
+        <div style="background:${getSwatchBgColor()};padding:16px;border-radius:12px">
+          <div style="width:140px;height:90px;background:rgb(${target.r},${target.g},${target.b});border-radius:10px"></div>
+        </div>
+      </div>
+      <div class="wc-choices">
+        <button class="choice-btn" data-type="warm" style="border-color:rgba(255,107,107,0.3)">🔴 Chaud</button>
+        <button class="choice-btn" data-type="neutral">⚪ Neutre</button>
+        <button class="choice-btn" data-type="cool" style="border-color:rgba(77,150,255,0.3)">🔵 Froid</button>
+      </div>
+    `;
+    gameArea.appendChild(card);
+
+    document.querySelectorAll('.wc-choices .choice-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!canAnswer) return;
+        canAnswer = false;
+        const isCorrect = btn.dataset.type === type;
+        btn.classList.add(isCorrect ? 'correct' : 'wrong');
+        if (!isCorrect) {
+          document.querySelector(`.wc-choices [data-type="${type}"]`).classList.add('correct');
+        }
+        if (isCorrect) { Sound.good(); onMiniGameEnd(mg.maxPts); }
+        else { Sound.wrong(); onMiniGameEnd(0); }
+      });
+    });
+  }
+
+  // ─── MINI-GAME 6: COMPLEMENT ──────────────────────────────────
+  function buildComplement(mg, time) {
+    const target = randomColor(settings.difficulty);
+    const hsl = rgbToHsl(target);
+    const compHsl = { h: (hsl.h + 180) % 360, s: hsl.s, l: hsl.l };
+    const compRgb = hslToRgb(compHsl);
+
+    // Generate wrong options
+    const wrong1 = hslToRgb({ h: (hsl.h + 90) % 360, s: hsl.s, l: hsl.l });
+    const wrong2 = hslToRgb({ h: (hsl.h + 270) % 360, s: hsl.s, l: hsl.l });
+    const wrong3 = hslToRgb({ h: (hsl.h + 120) % 360, s: hsl.s, l: hsl.l });
+
+    const options = [
+      { rgb: compRgb, correct: true },
+      { rgb: wrong1, correct: false },
+      { rgb: wrong2, correct: false },
+      { rgb: wrong3, correct: false },
+    ].sort(() => Math.random() - 0.5);
+
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-md">Quelle est la couleur <strong>complémentaire</strong> ?</p>
+      <div style="display:flex;justify-content:center;margin-bottom:16px">
+        <div style="background:${getSwatchBgColor()};padding:12px;border-radius:10px">
+          <div style="width:100px;height:60px;background:rgb(${target.r},${target.g},${target.b});border-radius:8px"></div>
+        </div>
+      </div>
+      <div class="complement-choices" id="comp-choices"></div>
+    `;
+    gameArea.appendChild(card);
+
+    const container = document.getElementById('comp-choices');
+    options.forEach(opt => {
+      const cell = document.createElement('div');
+      cell.className = 'complement-cell';
+      cell.style.backgroundColor = `rgb(${opt.rgb.r},${opt.rgb.g},${opt.rgb.b})`;
+      cell.addEventListener('click', () => {
+        if (!canAnswer) return;
+        canAnswer = false;
+        cell.classList.add(opt.correct ? 'correct' : 'wrong');
+        if (!opt.correct) {
+          container.querySelectorAll('.complement-cell').forEach(c => {
+            if (options.find(o => o.correct && `rgb(${o.rgb.r},${o.rgb.g},${o.rgb.b})` === c.style.backgroundColor)) {
+              c.classList.add('correct');
+            }
+          });
+        }
+        if (opt.correct) { Sound.good(); onMiniGameEnd(mg.maxPts); }
+        else { Sound.wrong(); onMiniGameEnd(0); }
+      });
+      container.appendChild(cell);
+    });
+  }
+
+  // ─── MINI-GAME 7: DARKER OR LIGHTER ───────────────────────────
+  function buildDark(mg, time) {
+    const base = randomColor(settings.difficulty);
+    const hsl = rgbToHsl(base);
+    const diff = settings.difficulty === 'easy' ? 20 : settings.difficulty === 'hard' ? 5 : 10;
+    const darkerL = Math.max(5, hsl.l - diff);
+    const lighterL = Math.min(95, hsl.l + diff);
+    const darkRgb = hslToRgb({ h: hsl.h, s: hsl.s, l: darkerL });
+    const lightRgb = hslToRgb({ h: hsl.h, s: hsl.s, l: lighterL });
+    const swapped = Math.random() > 0.5;
+    const leftRgb = swapped ? lightRgb : darkRgb;
+    const rightRgb = swapped ? darkRgb : lightRgb;
+    const correctSide = swapped ? 'right' : 'left'; // which side is darker
+
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-md">Clique sur la couleur la plus <strong>sombre</strong>.</p>
+      <div class="dl-pair">
+        <div class="dl-cell" id="dl-left" style="background:rgb(${leftRgb.r},${leftRgb.g},${leftRgb.b})"></div>
+        <div class="dl-cell" id="dl-right" style="background:rgb(${rightRgb.r},${rightRgb.g},${rightRgb.b})"></div>
+      </div>
+    `;
+    gameArea.appendChild(card);
+
+    ['left','right'].forEach(side => {
+      document.getElementById(`dl-${side}`).addEventListener('click', () => {
+        if (!canAnswer) return;
+        canAnswer = false;
+        const isCorrect = side === correctSide;
+        document.getElementById(`dl-${side}`).classList.add(isCorrect ? 'correct' : 'wrong');
+        document.getElementById(`dl-${correctSide}`).classList.add('correct');
+        if (isCorrect) { Sound.good(); onMiniGameEnd(mg.maxPts); }
+        else { Sound.wrong(); onMiniGameEnd(0); }
+      });
+    });
+  }
+
+  // ─── MINI-GAME 8: PERFECT MATCH ──────────────────────────────
+  function buildMatch(mg, time) {
+    const target = randomColor(settings.difficulty);
+
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-md">Reproduis cette couleur le plus précisément possible !</p>
+      <div style="display:flex;justify-content:center;margin-bottom:12px">
+        <div style="background:${getSwatchBgColor()};padding:12px;border-radius:10px">
+          <div style="width:120px;height:70px;background:rgb(${target.r},${target.g},${target.b});border-radius:8px"></div>
+        </div>
+      </div>
+      <div class="pm-input-wrap">
+        <input type="text" class="input input-mono" id="pm-hex" placeholder="#HEX (ex: #FF5733)" maxlength="7" autocomplete="off">
+      </div>
+      <button class="btn btn-primary w-full mt-md" id="pm-submit">VALIDER</button>
+    `;
+    gameArea.appendChild(card);
+
+    document.getElementById('pm-submit').addEventListener('click', () => {
+      if (!canAnswer) return;
+      let val = document.getElementById('pm-hex').value.trim();
+      if (!val.startsWith('#')) val = '#' + val;
+      const userRgb = hexToRgb(val);
+      if (!userRgb) { showToast('HEX invalide !', 'error'); return; }
+      canAnswer = false;
+      const { score } = computeScore(target, userRgb, mg.maxPts);
+      if (score >= mg.maxPts * 0.8) Sound.good(); else Sound.wrong();
+      onMiniGameEnd(score);
+    });
+  }
+
+  // ─── FINAL SCREEN ─────────────────────────────────────────────
+  function showFinal() {
+    gameArea.style.display = 'none';
+    const finalScreen = document.getElementById('final-screen');
+    finalScreen.classList.add('show');
+
+    const max = MINI_GAMES.reduce((s, m) => s + m.maxPts, 0);
+    const pct = totalPts / max;
+
+    let rank, rankColor;
+    if (pct >= 0.95) { rank = 'S'; rankColor = '#FFD700'; }
+    else if (pct >= 0.80) { rank = 'A'; rankColor = '#A78BFA'; }
+    else if (pct >= 0.65) { rank = 'B'; rankColor = '#34D399'; }
+    else if (pct >= 0.50) { rank = 'C'; rankColor = '#60A5FA'; }
+    else if (pct >= 0.35) { rank = 'D'; rankColor = '#FBBF24'; }
+    else { rank = 'F'; rankColor = '#F87171'; }
+
+    const rankEl = document.getElementById('final-rank-letter');
+    rankEl.textContent = rank;
+    rankEl.className = `rank-letter ${rank}`;
+    document.getElementById('final-rank-text').textContent = `RANG ${rank}`;
+
+    animateCounter(document.getElementById('final-total'), 0, totalPts, 1200);
+
+    if (pct >= 0.8) launchConfetti(60);
+
+    // Scores list
+    const list = document.getElementById('mg-scores-list');
+    MINI_GAMES.forEach((mg, i) => {
+      const row = document.createElement('div');
+      row.className = 'mg-score-row';
+      const score = gameScores[i] ?? 0;
+      const perfect = score >= mg.maxPts * 0.8;
+      row.innerHTML = `
+        <span class="mg-score-icon">${mg.icon}</span>
+        <span class="mg-score-name">${mg.name}</span>
+        <span class="mg-score-pts">${score}</span>
+        <span class="mg-score-check">${perfect ? '✅' : score > 0 ? '🟡' : '❌'}</span>
+      `;
+      list.appendChild(row);
+    });
+
+    // Save record
+    try {
+      const data = JSON.parse(localStorage.getItem('chromaflash_data') || '{}');
+      if (!data.records) data.records = {};
+      if (!data.records.flash || totalPts > data.records.flash.best) {
+        data.records.flash = { best: totalPts, rank, date: new Date().toISOString() };
+      }
+      localStorage.setItem('chromaflash_data', JSON.stringify(data));
+    } catch {}
+
+    Sound.levelUp();
+  }
+
+  document.getElementById('replay-btn').addEventListener('click', () => {
+    document.getElementById('final-screen').classList.remove('show');
+    document.getElementById('mg-scores-list').innerHTML = '';
+    startGame();
+  });
+
+  document.getElementById('share-btn').addEventListener('click', () => {
+    const max = MINI_GAMES.reduce((s,m) => s+m.maxPts,0);
+    const pct = totalPts / max;
+    const rank = pct>=0.95?'S':pct>=0.8?'A':pct>=0.65?'B':pct>=0.5?'C':pct>=0.35?'D':'F';
+    const text = `⚡ ChromaFlash — Mode Flash\nRANG ${rank} — ${totalPts} / ${max} pts\n\nTeste ta perception colorimétrique !`;
+    copyScore(text);
+  });
+
+  // ─── START ────────────────────────────────────────────────────
+  startGame();
+</script>
+</body>
+</html>

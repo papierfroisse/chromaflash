@@ -1,0 +1,26 @@
+# Dépendances Node
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Variables d'environnement (clés API, secrets Firebase)
+.env
+.env.local
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Éditeurs
+.vscode/settings.json
+.idea/
+*.suo
+*.swp
+
+# Build (pour plus tard)
+dist/
+build/
