@@ -1536,7 +1536,7 @@
 
     slider.addEventListener('input', (e) => {
       userL = parseInt(e.target.value);
-      textEl.style.color = \`hsl(0,0%,\${userL}%)\`;
+      textEl.style.color = `hsl(0,0%,${userL}%)`;
     });
 
     document.getElementById('contraste-val').addEventListener('click', () => {
@@ -1703,7 +1703,7 @@
 
       if (gameState === 'playing') {
         scrollX += speed;
-        world.style.transform = \`translateX(\${-scrollX}px)\`;
+        world.style.transform = `translateX(${-scrollX}px)`;
 
         const pStart = 50 + scrollX;
         const pEnd = 80 + scrollX;
