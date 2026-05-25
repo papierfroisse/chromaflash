@@ -398,7 +398,8 @@
   import {
     getSettings, getSwatchBgColor, playSoundForScore, animateCounter,
     getDeltaLabel, getDeltaClass, getDeltaBarWidth, getDeltaBarColor,
-    updateRoundDots, updateTimerRing, showToast, copyScore, launchConfetti, Sound
+    updateRoundDots, updateTimerRing, showToast, copyScore, launchConfetti, Sound,
+    generateShareImage
   } from './js/ui.js';
 
   // ─── STATE ───────────────────────────────────────────────────
@@ -700,8 +701,7 @@
 
   document.getElementById('share-btn').addEventListener('click', () => {
     const s = session.getFinalSummary();
-    const text = `🎨 ChromaFlash — Mode Classic\n${s.globalRank.emoji} ${s.globalRank.label}\nScore : ${s.total.toLocaleString()} / 25 000\n\nTeste ta perception colorimétrique !`;
-    copyScore(text);
+    generateShareImage(s.total, 'Classic', s.rounds[s.rounds.length - 1].deltaE, rgbToHex(s.rounds[0].targetRgb), null);
   });
 </script>
 </body>

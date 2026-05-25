@@ -196,7 +196,7 @@
     <div class="progress-bar" style="width:120px">
       <div class="progress-fill" id="progress-fill" style="width:0%"></div>
     </div>
-    <span class="text-xs text-muted" id="progress-label">1/8</span>
+    <span class="text-xs text-muted" id="progress-label">1/9</span>
   </div>
   <div class="flex items-center gap-sm">
     <div class="timer-ring-wrapper" id="timer-wrapper">
@@ -231,7 +231,7 @@
       <div class="text-secondary text-sm mt-sm mb-lg">Session terminée !</div>
 
       <div class="score-display" id="final-total">0</div>
-      <div class="score-max mb-lg">/ 8 000</div>
+      <div class="score-max mb-lg">/ 9 000</div>
 
       <div class="minigame-scores" id="mg-scores-list"></div>
 
@@ -244,11 +244,12 @@
   </div>
 </div>
 
-<script type="module">
+  <script type="module">
   import {
     randomColor, rgbToHex, hexToRgb, rgbToLab, deltaE00, hslToRgb, rgbToHsl,
     findClosestColorName, getColorCandidates, computeScore
   } from './js/color.js';
+  import { TYPO_FONTS, getRandomFonts } from './js/typo.js';
   import {
     getSettings, getSwatchBgColor, Sound, animateCounter,
     showToast, launchConfetti, playSoundForScore, copyScore
@@ -267,7 +268,14 @@
     { id:'complement', name:'COMPLÉMENT',    icon:'🔵',  maxPts: 1000, time: 8 },
     { id:'dark',       name:'+ SOMBRE',      icon:'🌑',  maxPts: 1000, time: 6 },
     { id:'match',      name:'PERFECT MATCH', icon:'🎯',  maxPts: 1000, time: 12 },
+    { id:'typo',       name:'TYPO RUSH',     icon:'🔤',  maxPts: 1000, time: 8 },
   ];
+
+  // Pre-load Typo Fonts
+  const fontLink = document.createElement('link');
+  fontLink.rel = 'stylesheet';
+  fontLink.href = 'https://fonts.googleapis.com/css2?' + TYPO_FONTS.map(f => `family=${f.import}`).join('&') + '&display=swap';
+  document.head.appendChild(fontLink);
 
   // Speed scaling: each game is faster
   let mgIndex = 0;
@@ -339,6 +347,7 @@
       complement: buildComplement,
       dark:       buildDark,
       match:      buildMatch,
+      typo:       buildTypo,
     };
     builders[mg.id](mg, time);
 
@@ -818,6 +827,68 @@
       const { score } = computeScore(target, userRgb, mg.maxPts);
       if (score >= mg.maxPts * 0.8) Sound.good(); else Sound.wrong();
       onMiniGameEnd(score);
+    });
+  }
+
+  // ─── MINI-GAME 9: TYPO RUSH ───────────────────────────────────
+  function buildTypo(mg, time) {
+    const PANGRAMS = [
+      "Portez ce vieux whisky au juge blond qui fume.",
+      "Voyez le brick géant que j'examine près du wharf.",
+      "The quick brown fox jumps over the lazy dog.",
+      "Pack my box with five dozen liquor jugs."
+    ];
+    
+    const choices = getRandomFonts(4);
+    const target = choices[Math.floor(Math.random() * 4)];
+    const pangram = PANGRAMS[Math.floor(Math.random() * PANGRAMS.length)];
+
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-md">Quelle est la police de ce texte ?</p>
+      
+      <div style="background:var(--bg-void); border-radius:12px; padding:30px 20px; text-align:center; margin-bottom:20px; box-shadow:var(--shadow-inner);">
+        <div style="font-family:'${target.name}', ${target.category}; font-size:1.8rem; line-height:1.2;">
+          ${pangram}
+        </div>
+      </div>
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px" id="typo-choices"></div>
+    `;
+    gameArea.appendChild(card);
+
+    const container = document.getElementById('typo-choices');
+    choices.forEach(font => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = font.name;
+      btn.style.fontFamily = `"${font.name}", ${font.category}`;
+      btn.style.fontSize = '1.1rem';
+      btn.style.padding = '15px 10px';
+      
+      btn.addEventListener('click', () => {
+        if (!canAnswer) return;
+        canAnswer = false;
+        const isCorrect = font.name === target.name;
+        btn.classList.add(isCorrect ? 'correct' : 'wrong');
+        
+        if (!isCorrect) {
+          Array.from(container.children).forEach(b => {
+            if (b.textContent === target.name) b.classList.add('correct');
+          });
+        }
+        
+        if (isCorrect) { Sound.good(); onMiniGameEnd(mg.maxPts); }
+        else { Sound.wrong(); onMiniGameEnd(0); }
+      });
+      container.appendChild(btn);
     });
   }
 

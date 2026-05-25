@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChromaFlash — Pixel Perfect 📐</title>
+  <link rel="stylesheet" href="css/design.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <style>
+    body { padding-top: 60px; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; }
+    
+    .pixel-layout {
+      flex: 1;
+      width: 100%;
+      max-width: 600px;
+      padding: var(--space-xl) var(--space-lg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-lg);
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      background: var(--bg-card);
+      border: 2px solid var(--bg-border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      touch-action: none; /* Prevent scroll while dragging */
+    }
+
+    /* The box the user moves */
+    .draggable-box {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      background: var(--accent);
+      border-radius: var(--radius-md);
+      cursor: grab;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .draggable-box:active { cursor: grabbing; }
+
+    /* Crosshairs for the real center (hidden until reveal) */
+    .real-center-h, .real-center-v {
+      position: absolute;
+      background: rgba(52, 211, 153, 0.6);
+      display: none;
+      pointer-events: none;
+    }
+    .real-center-h { width: 100%; height: 1px; top: 50%; left: 0; }
+    .real-center-v { width: 1px; height: 100%; top: 0; left: 50%; }
+
+    .instructions {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    /* Result modal */
+    .result-overlay {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-xl) var(--space-lg);
+      text-align: center;
+    }
+    .result-overlay.show { display: flex; animation: fadeUp 0.4s var(--ease-out) both; }
+  </style>
+</head>
+<body>
+
+<header class="game-header" style="width:100%; max-width:600px">
+  <a href="index.html" class="back-btn">← Accueil</a>
+  <div class="text-xs text-muted" id="score-label">Score: 0 / 5</div>
+  <div class="text-xs text-muted">📐 Pixel Perfect</div>
+</header>
+
+<div class="pixel-layout" id="game-layout">
+  
+  <div class="instructions anim-fadeUp">
+    <p>Glisse le carré (ou utilise les flèches du clavier) pour le placer <strong>parfaitement au centre</strong>.</p>
+  </div>
+
+  <div class="canvas-wrapper anim-scaleIn delay-1" id="game-canvas">
+    <!-- Crosshairs -->
+    <div class="real-center-h" id="cross-h"></div>
+    <div class="real-center-v" id="cross-v"></div>
+    
+    <!-- User box -->
+    <div class="draggable-box" id="drag-box">
+      <span style="font-size: 1.5rem">🎯</span>
+    </div>
+  </div>
+
+  <div class="w-full anim-fadeUp delay-2">
+    <button class="btn btn-primary btn-lg w-full" id="validate-btn">
+      VALIDER LA POSITION
+    </button>
+  </div>
+</div>
+
+<!-- FINAL -->
+<div id="final-layout" class="result-overlay" style="margin-top: 60px;">
+  <div class="card text-center" style="max-width: 400px; width:100%;">
+    <div class="text-4xl mb-sm" id="fin-emoji">🏆</div>
+    <div class="text-2xl weight-700 mb-lg" id="fin-rank">FIN DU JEU</div>
+    <div class="text-sm text-muted mb-sm">Score final</div>
+    <div class="score-display mb-xl" id="fin-score">0</div>
+    <button class="btn btn-primary btn-lg w-full mb-md" onclick="location.reload()">Rejouer</button>
+    <a href="index.html" class="btn btn-ghost w-full">Retour au menu</a>
+  </div>
+</div>
+
+<script type="module">
+  import { getDistance, computePixelScore, getPixelRank } from './js/composition.js';
+  import { Sound, animateCounter, launchConfetti, showToast } from './js/ui.js';
+
+  const TOTAL_ROUNDS = 5;
+  const MAX_PER_ROUND = 5000;
+  
+  let currentRound = 0;
+  let totalScore = 0;
+  let isWaiting = false;
+
+  const canvas = document.getElementById('game-canvas');
+  const box = document.getElementById('drag-box');
+  const validateBtn = document.getElementById('validate-btn');
+  const crossH = document.getElementById('cross-h');
+  const crossV = document.getElementById('cross-v');
+  const scoreLabel = document.getElementById('score-label');
+
+  let boxW, boxH, canvasW, canvasH;
+  let boxX = 0, boxY = 0; // Current position of top-left corner
+  let isDragging = false;
+  let startMouseX, startMouseY;
+  let startBoxX, startBoxY;
+
+  function initRound() {
+    if (currentRound >= TOTAL_ROUNDS) return showFinal();
+    
+    currentRound++;
+    scoreLabel.textContent = `Ronde: ${currentRound} / ${TOTAL_ROUNDS} — Points: ${totalScore}`;
+    isWaiting = false;
+    
+    // Hide crosshairs
+    crossH.style.display = 'none';
+    crossV.style.display = 'none';
+    box.style.background = 'var(--accent)';
+    validateBtn.textContent = 'VALIDER LA POSITION';
+
+    // Get dims
+    const cRect = canvas.getBoundingClientRect();
+    canvasW = cRect.width;
+    canvasH = cRect.height;
+    
+    const bRect = box.getBoundingClientRect();
+    boxW = bRect.width;
+    boxH = bRect.height;
+
+    // Randomize starting position (away from center)
+    // Center is (canvasW - boxW)/2
+    let rx, ry;
+    do {
+      rx = Math.random() * (canvasW - boxW);
+      ry = Math.random() * (canvasH - boxH);
+    } while (getDistance(rx, ry, (canvasW - boxW)/2, (canvasH - boxH)/2) < 50);
+
+    setBoxPos(rx, ry);
+  }
+
+  function setBoxPos(x, y) {
+    // constrain
+    boxX = Math.max(0, Math.min(x, canvasW - boxW));
+    boxY = Math.max(0, Math.min(y, canvasH - boxH));
+    box.style.left = boxX + 'px';
+    box.style.top = boxY + 'px';
+  }
+
+  // --- DRAG LOGIC ---
+  function onPointerDown(e) {
+    if (isWaiting) return;
+    isDragging = true;
+    startMouseX = e.clientX || (e.touches && e.touches[0].clientX);
+    startMouseY = e.clientY || (e.touches && e.touches[0].clientY);
+    startBoxX = boxX;
+    startBoxY = boxY;
+    box.style.transition = 'none';
+  }
+  
+  function onPointerMove(e) {
+    if (!isDragging || isWaiting) return;
+    e.preventDefault();
+    const mx = e.clientX || (e.touches && e.touches[0].clientX);
+    const my = e.clientY || (e.touches && e.touches[0].clientY);
+    const dx = mx - startMouseX;
+    const dy = my - startMouseY;
+    setBoxPos(startBoxX + dx, startBoxY + dy);
+  }
+
+  function onPointerUp() {
+    isDragging = false;
+  }
+
+  box.addEventListener('mousedown', onPointerDown);
+  box.addEventListener('touchstart', onPointerDown, { passive: false });
+  document.addEventListener('mousemove', onPointerMove);
+  document.addEventListener('touchmove', onPointerMove, { passive: false });
+  document.addEventListener('mouseup', onPointerUp);
+  document.addEventListener('touchend', onPointerUp);
+
+  // --- KEYBOARD LOGIC ---
+  document.addEventListener('keydown', (e) => {
+    if (isWaiting) return;
+    let step = e.shiftKey ? 10 : 1;
+    switch (e.key) {
+      case 'ArrowUp':    setBoxPos(boxX, boxY - step); e.preventDefault(); break;
+      case 'ArrowDown':  setBoxPos(boxX, boxY + step); e.preventDefault(); break;
+      case 'ArrowLeft':  setBoxPos(boxX - step, boxY); e.preventDefault(); break;
+      case 'ArrowRight': setBoxPos(boxX + step, boxY); e.preventDefault(); break;
+    }
+  });
+
+  // --- VALIDATION ---
+  validateBtn.addEventListener('click', () => {
+    if (isWaiting) {
+      // It's the "Next Round" state
+      initRound();
+      return;
+    }
+    
+    isWaiting = true;
+
+    // Calculate real center
+    const targetX = (canvasW - boxW) / 2;
+    const targetY = (canvasH - boxH) / 2;
+    
+    const deltaP = getDistance(boxX, boxY, targetX, targetY);
+    const { score } = computePixelScore(deltaP, MAX_PER_ROUND, Math.min(canvasW, canvasH) * 0.4);
+    
+    totalScore += score;
+    
+    // Reveal crosshairs
+    crossH.style.display = 'block';
+    crossV.style.display = 'block';
+    
+    // Visual feedback
+    if (deltaP < 3) {
+      box.style.background = '#34D399'; // Perfect green
+      Sound.perfect();
+      showToast('PERFECT! 🎯', 'success');
+      launchConfetti();
+    } else if (deltaP < 15) {
+      box.style.background = '#60A5FA'; // Good blue
+      Sound.good();
+      showToast(`Presque ! (Erreur: ${Math.round(deltaP)}px)`, 'info');
+    } else {
+      box.style.background = '#F87171'; // Bad red
+      Sound.wrong();
+      showToast(`Aïe ! (Erreur: ${Math.round(deltaP)}px)`, 'error');
+    }
+    
+    // Move box to actual center to show difference
+    box.style.transition = 'all 0.5s var(--ease-spring)';
+    setBoxPos(targetX, targetY);
+
+    validateBtn.textContent = 'RONDE SUIVANTE →';
+  });
+
+  function showFinal() {
+    document.getElementById('game-layout').style.display = 'none';
+    const finalLayout = document.getElementById('final-layout');
+    finalLayout.classList.add('show');
+    
+    const rank = getPixelRank(totalScore, TOTAL_ROUNDS * MAX_PER_ROUND);
+    document.getElementById('fin-emoji').textContent = rank.emoji;
+    document.getElementById('fin-rank').textContent = rank.label;
+    
+    animateCounter(document.getElementById('fin-score'), 0, totalScore, 1000);
+    
+    if (rank.letter === 'S' || rank.letter === 'A') {
+      setTimeout(launchConfetti, 300);
+      Sound.levelUp();
+    }
+  }
+
+  // Window resize resets round logic to avoid bad bounds
+  window.addEventListener('resize', () => {
+    if (!isWaiting) initRound();
+  });
+
+  // Start
+  setTimeout(initRound, 100);
+
+</script>
+</body>
+</html>

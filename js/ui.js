@@ -309,3 +309,80 @@ export function copyScore(text) {
     showToast(text, 'info', 4000);
   });
 }
+
+// ─── GENERATE SHARE IMAGE (CANVAS) ───────────────────────────────────────────
+
+export async function generateShareImage(score, mode, deltaE, targetHex, userHex) {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = 600;
+  canvas.height = 400;
+
+  // Background
+  ctx.fillStyle = '#111111';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Logo / Title
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '700 28px "Space Grotesk", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('ChromaFlash', canvas.width / 2, 50);
+  
+  ctx.fillStyle = '#888888';
+  ctx.font = '600 16px "Space Grotesk", sans-serif';
+  ctx.fillText(`Mode ${mode}`, canvas.width / 2, 75);
+
+  // Score
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '700 48px "Space Mono", monospace';
+  ctx.fillText(`${score.toLocaleString()} pts`, canvas.width / 2, 140);
+
+  // Colors comparison
+  const boxW = 120, boxH = 120;
+  const gap = 20;
+  const startX = canvas.width / 2 - boxW - gap / 2;
+  const startY = 180;
+
+  // Target Box
+  ctx.fillStyle = targetHex || '#000000';
+  ctx.beginPath();
+  ctx.roundRect(startX, startY, boxW, boxH, 12);
+  ctx.fill();
+
+  // User Box
+  if (userHex) {
+    ctx.fillStyle = userHex;
+    ctx.beginPath();
+    ctx.roundRect(startX + boxW + gap, startY, boxW, boxH, 12);
+    ctx.fill();
+  }
+
+  // Delta E text
+  if (deltaE !== undefined) {
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '700 20px "Space Mono", monospace';
+    ctx.fillText(`ΔE = ${deltaE.toFixed(2)}`, canvas.width / 2, startY + boxH + 40);
+  }
+
+  // URL
+  ctx.fillStyle = '#555555';
+  ctx.font = '14px "Space Grotesk", sans-serif';
+  ctx.fillText('papierfroisse.github.io/chromaflash', canvas.width / 2, canvas.height - 20);
+
+  try {
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    if (navigator.clipboard && navigator.clipboard.write) {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      showToast('Image copiée dans le presse-papier ! 📸', 'success');
+    } else {
+      // Fallback: download
+      const link = document.createElement('a');
+      link.download = `chromaflash-${mode.toLowerCase()}-${Date.now()}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+      showToast('Image téléchargée ! 📸', 'success');
+    }
+  } catch (err) {
+    showToast('Erreur lors de la copie de l\'image', 'error');
+  }
+}

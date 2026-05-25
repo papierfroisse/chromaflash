@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChromaFlash — Daily Challenge 📅</title>
+  <link rel="stylesheet" href="css/design.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <style>
+    body { padding-top: 60px; min-height: 100dvh; display: flex; flex-direction: column; }
+    .daily-layout {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-lg);
+      padding: var(--space-lg);
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+      align-items: start;
+    }
+    @media (max-width: 640px) {
+      .daily-layout { grid-template-columns: 1fr; }
+    }
+    .target-col { display: flex; flex-direction: column; gap: var(--space-lg); position: sticky; top: 80px; }
+    .target-card { background: var(--bg-card); border: 1px solid var(--bg-border); border-radius: var(--radius-xl); padding: var(--space-xl); text-align: center; }
+    .daily-swatch { width: 160px; height: 160px; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); margin: var(--space-md) auto; }
+    .input-col { display: flex; flex-direction: column; gap: var(--space-md); }
+    .daily-input-card { background: var(--bg-card); border: 1px solid var(--bg-border); border-radius: var(--radius-xl); padding: var(--space-xl); }
+    
+    .done-overlay {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: var(--space-2xl) var(--space-lg);
+    }
+    .done-overlay.show { display: flex; }
+    
+    .compare-boxes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: var(--space-lg) 0;
+    }
+    .compare-box { width: 100px; height: 100px; border-radius: 12px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; }
+    .compare-label { font-size: 0.7rem; font-weight: 700; background: rgba(0,0,0,0.4); padding: 2px 8px; border-radius: 999px; color: white; }
+  </style>
+</head>
+<body>
+
+<header class="game-header">
+  <a href="index.html" class="back-btn">← Accueil</a>
+  <div class="text-sm font-mono weight-700" id="date-label"></div>
+  <div class="text-xs text-muted">📅 Daily Challenge</div>
+</header>
+
+<div class="daily-layout" id="daily-layout">
+  <!-- LEFT COL -->
+  <div class="target-col anim-fadeUp">
+    <div class="target-card">
+      <div class="text-xs text-muted uppercase weight-700 mb-sm">Couleur du jour</div>
+      <div class="daily-swatch" id="target-swatch"></div>
+      <div class="text-xs text-muted">Un seul essai. Bonne chance !</div>
+    </div>
+  </div>
+
+  <!-- RIGHT COL -->
+  <div class="input-col anim-fadeUp delay-2">
+    <div class="daily-input-card">
+      <div class="text-lg weight-700 mb-lg">Ton estimation (HSL)</div>
+      <div class="flex flex-col gap-md mb-lg">
+        <div class="slider-track">
+          <div class="slider-label-row">
+            <span class="slider-label">Teinte (H)</span>
+            <span class="slider-value" id="sv-h">180°</span>
+          </div>
+          <input type="range" id="sl-h" min="0" max="360" value="180">
+        </div>
+        <div class="slider-track">
+          <div class="slider-label-row">
+            <span class="slider-label">Saturation (S)</span>
+            <span class="slider-value" id="sv-s">50%</span>
+          </div>
+          <input type="range" id="sl-s" min="0" max="100" value="50">
+        </div>
+        <div class="slider-track">
+          <div class="slider-label-row">
+            <span class="slider-label">Luminosité (L)</span>
+            <span class="slider-value" id="sv-l">50%</span>
+          </div>
+          <input type="range" id="sl-l" min="0" max="100" value="50">
+        </div>
+      </div>
+
+      <div style="padding: 20px; background: var(--bg-input); border-radius: 12px; margin-bottom: 20px;">
+        <div class="text-xs text-muted uppercase weight-700 mb-sm">Aperçu de ton choix</div>
+        <div id="user-preview" style="height: 60px; border-radius: 8px; background: hsl(180, 50%, 50%); transition: background 0.1s"></div>
+      </div>
+
+      <button class="btn btn-primary btn-lg w-full" id="validate-btn">
+        🎯 VALIDER MON ESSAI
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ALREADY DONE / FINAL SCORE OVERLAY -->
+<div class="done-overlay" id="done-overlay">
+  <div class="card text-center" style="max-width: 500px">
+    <div class="text-4xl mb-sm" id="fin-emoji">📅</div>
+    <div class="text-2xl weight-700 mb-xs" id="fin-title">DÉFI QUOTIDIEN TERMINÉ</div>
+    <div class="text-sm text-muted mb-lg" id="fin-date"></div>
+
+    <div class="compare-boxes">
+      <div class="compare-box" id="fin-user-box"><span class="compare-label">Toi</span></div>
+      <div class="compare-box" id="fin-target-box"><span class="compare-label">Cible</span></div>
+    </div>
+
+    <div class="score-display mb-xs" id="fin-score">0</div>
+    <div class="text-sm font-mono weight-700 mb-lg" id="fin-delta">ΔE = ?</div>
+
+    <button class="btn btn-primary btn-lg w-full mb-md" id="share-btn">
+      📸 PARTAGER L'IMAGE
+    </button>
+    <a href="index.html" class="btn btn-ghost w-full">Retour à l'accueil</a>
+  </div>
+</div>
+
+<script type="module">
+  import { getDailyColor, rgbToLab, deltaE00, computeScore, getRank, hslToRgb, rgbToHex } from './js/color.js';
+  import { Sound, animateCounter, launchConfetti, generateShareImage } from './js/ui.js';
+
+  const todayStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const targetRgb = getDailyColor(todayStr);
+  let userRgb = hslToRgb({ h: 180, s: 50, l: 50 });
+
+  document.getElementById('date-label').textContent = todayStr;
+  document.getElementById('fin-date').textContent = todayStr;
+
+  // Check if already played today
+  const savedData = JSON.parse(localStorage.getItem('cf_daily') || '{}');
+  if (savedData.date === todayStr) {
+    showFinal(savedData.score, savedData.de, savedData.userRgb);
+  } else {
+    initGame();
+  }
+
+  function initGame() {
+    document.getElementById('target-swatch').style.backgroundColor = `rgb(${targetRgb.r},${targetRgb.g},${targetRgb.b})`;
+
+    ['h','s','l'].forEach(ch => {
+      document.getElementById(`sl-${ch}`).addEventListener('input', updatePreview);
+    });
+
+    document.getElementById('validate-btn').addEventListener('click', validate);
+  }
+
+  function updatePreview() {
+    const h = +document.getElementById('sl-h').value;
+    const s = +document.getElementById('sl-s').value;
+    const l = +document.getElementById('sl-l').value;
+    document.getElementById('sv-h').textContent = `${h}°`;
+    document.getElementById('sv-s').textContent = `${s}%`;
+    document.getElementById('sv-l').textContent = `${l}%`;
+    userRgb = hslToRgb({ h, s, l });
+    document.getElementById('user-preview').style.backgroundColor = `rgb(${userRgb.r},${userRgb.g},${userRgb.b})`;
+  }
+
+  function validate() {
+    const tLab = rgbToLab(targetRgb);
+    const uLab = rgbToLab(userRgb);
+    const de = deltaE00(tLab, uLab);
+    const { score } = computeScore(targetRgb, userRgb, 5000);
+
+    localStorage.setItem('cf_daily', JSON.stringify({
+      date: todayStr,
+      score,
+      de,
+      userRgb
+    }));
+
+    showFinal(score, de, userRgb);
+    Sound.reveal();
+    if (score > 4000) { setTimeout(() => { Sound.perfect(); launchConfetti(); }, 500); }
+    else if (score > 3000) { setTimeout(() => Sound.excellent(), 500); }
+  }
+
+  function showFinal(score, de, uRgb) {
+    document.getElementById('daily-layout').style.display = 'none';
+    document.getElementById('done-overlay').classList.add('show');
+    
+    document.getElementById('fin-user-box').style.backgroundColor = `rgb(${uRgb.r},${uRgb.g},${uRgb.b})`;
+    document.getElementById('fin-target-box').style.backgroundColor = `rgb(${targetRgb.r},${targetRgb.g},${targetRgb.b})`;
+    
+    document.getElementById('fin-delta').textContent = `ΔE = ${de.toFixed(2)}`;
+    
+    const rank = getRank(score, 5000);
+    document.getElementById('fin-emoji').textContent = rank.emoji;
+    document.getElementById('fin-title').textContent = rank.label;
+
+    animateCounter(document.getElementById('fin-score'), 0, score, 1000);
+
+    document.getElementById('share-btn').onclick = () => {
+      generateShareImage(score, 'Daily', de, rgbToHex(targetRgb), rgbToHex(uRgb));
+    };
+  }
+</script>
+</body>
+</html>

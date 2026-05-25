@@ -98,6 +98,9 @@
     .mode-card[data-mode="classic"] { --mode-color: #4D96FF; --mode-color-dim: rgba(77,150,255,0.12); }
     .mode-card[data-mode="expert"]  { --mode-color: #34D399; --mode-color-dim: rgba(52,211,153,0.12); }
     .mode-card[data-mode="survie"]  { --mode-color: #F87171; --mode-color-dim: rgba(248,113,113,0.12); }
+    .mode-card[data-mode="daily"]   { --mode-color: #FFE66D; --mode-color-dim: rgba(255,230,109,0.12); grid-column: 1 / -1; }
+    .mode-card[data-mode="typo"]    { --mode-color: #B388FF; --mode-color-dim: rgba(179,136,255,0.12); }
+    .mode-card[data-mode="pixel"]   { --mode-color: #F472B6; --mode-color-dim: rgba(244,114,182,0.12); }
 
     .mode-card-inner {
       position: relative;
@@ -204,9 +207,28 @@
 </div>
 
 <!-- MODES GRID -->
-<div class="modes-grid">
 
-  <a href="classic.html" class="mode-card anim-fadeUp delay-1" data-mode="classic" id="card-classic">
+<!-- CATEGORY: COULEUR -->
+<div class="category-header anim-fadeUp" style="max-width: 700px; margin: 0 auto var(--space-md); padding: 0 var(--space-lg);">
+  <h2 class="text-xl weight-700">🎨 Couleur</h2>
+  <p class="text-sm text-secondary">Maîtrise les espaces colorimétriques (RGB, HEX, HSL)</p>
+</div>
+
+<div class="modes-grid mb-2xl">
+  <a href="daily.html" class="mode-card anim-fadeUp delay-1" data-mode="daily" id="card-daily">
+    <div class="mode-card-inner">
+      <span class="mode-icon">📅</span>
+      <div class="mode-title">DAILY CHALLENGE</div>
+      <div class="mode-sub">1 couleur · 1 essai par jour</div>
+      <div class="mode-pills">
+        <span class="mode-pill" style="color:#111; background:var(--mode-color)">Nouveau !</span>
+        <span class="mode-pill">Partageable</span>
+        <span class="mode-pill">ΔE exact</span>
+      </div>
+    </div>
+  </a>
+
+  <a href="classic.html" class="mode-card anim-fadeUp delay-2" data-mode="classic" id="card-classic">
     <div class="mode-card-inner">
       <span class="mode-icon">🎯</span>
       <div class="mode-title">CLASSIC</div>
@@ -219,7 +241,7 @@
     </div>
   </a>
 
-  <a href="flash.html" class="mode-card anim-fadeUp delay-2" data-mode="flash" id="card-flash">
+  <a href="flash.html" class="mode-card anim-fadeUp delay-3" data-mode="flash" id="card-flash">
     <div class="mode-card-inner">
       <span class="mode-icon">⚡</span>
       <div class="mode-title">FLASH</div>
@@ -232,7 +254,7 @@
     </div>
   </a>
 
-  <a href="expert.html" class="mode-card anim-fadeUp delay-3" data-mode="expert" id="card-expert">
+  <a href="expert.html" class="mode-card anim-fadeUp delay-4" data-mode="expert" id="card-expert">
     <div class="mode-card-inner">
       <span class="mode-icon">🔬</span>
       <div class="mode-title">EXPERT</div>
@@ -245,7 +267,7 @@
     </div>
   </a>
 
-  <a href="survie.html" class="mode-card anim-fadeUp delay-4" data-mode="survie" id="card-survie">
+  <a href="survie.html" class="mode-card anim-fadeUp delay-5" data-mode="survie" id="card-survie">
     <div class="mode-card-inner">
       <span class="mode-icon">💀</span>
       <div class="mode-title">SURVIE</div>
@@ -257,7 +279,48 @@
       </div>
     </div>
   </a>
+</div>
 
+<!-- CATEGORY: TYPOGRAPHIE -->
+<div class="category-header anim-fadeUp delay-5" style="max-width: 700px; margin: 0 auto var(--space-md); padding: 0 var(--space-lg);">
+  <h2 class="text-xl weight-700">🔤 Typographie</h2>
+  <p class="text-sm text-secondary">Reconnaissance de polices et anatomie de la lettre</p>
+</div>
+
+<div class="modes-grid mb-2xl">
+  <a href="typo.html" class="mode-card anim-fadeUp delay-6" data-mode="typo" id="card-typo">
+    <div class="mode-card-inner">
+      <span class="mode-icon">🔤</span>
+      <div class="mode-title">TYPO RUSH</div>
+      <div class="mode-sub">Reconnaissance Typographique</div>
+      <div class="mode-pills">
+        <span class="mode-pill">Bonus</span>
+        <span class="mode-pill">10 Polices</span>
+        <span class="mode-pill">Sans/Serif</span>
+      </div>
+    </div>
+  </a>
+</div>
+
+<!-- CATEGORY: COMPOSITION -->
+<div class="category-header anim-fadeUp delay-7" style="max-width: 700px; margin: 0 auto var(--space-md); padding: 0 var(--space-lg);">
+  <h2 class="text-xl weight-700">📐 Composition</h2>
+  <p class="text-sm text-secondary">Aiguise ton œil pour l'alignement et les grilles</p>
+</div>
+
+<div class="modes-grid mb-2xl">
+  <a href="pixel.html" class="mode-card anim-fadeUp delay-8" data-mode="pixel" id="card-pixel">
+    <div class="mode-card-inner">
+      <span class="mode-icon">📐</span>
+      <div class="mode-title">PIXEL PERFECT</div>
+      <div class="mode-sub">L'enfer du centrage div</div>
+      <div class="mode-pills">
+        <span class="mode-pill" style="color:#111; background:var(--mode-color)">Nouveau !</span>
+        <span class="mode-pill">Delta P</span>
+        <span class="mode-pill">5 Rondes</span>
+      </div>
+    </div>
+  </a>
 </div>
 
 <!-- RECORDS -->

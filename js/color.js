@@ -186,6 +186,28 @@ export function getRank(score, maxPoints = 5000) {
 
 // ─── COLOR GENERATION ────────────────────────────────────────────────────────
 
+// Simple seeded PRNG (Mulberry32) for Daily Challenge
+function mulberry32(a) {
+  return function() {
+    var t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+
+export function getDailyColor(dateString) {
+  // dateString format: "YYYY-MM-DD"
+  const seed = parseInt(dateString.replace(/-/g, ''), 10);
+  const prng = mulberry32(seed);
+
+  // Daily colors are 'hard' difficulty
+  const hue = prng() * 360;
+  const sat = 15 + prng() * 35;
+  const lit = 30 + prng() * 40;
+  return hslToRgb({ h: Math.round(hue), s: Math.round(sat), l: Math.round(lit) });
+}
+
 export function randomColor(difficulty = 'normal') {
   const r = () => Math.floor(Math.random() * 256);
 
