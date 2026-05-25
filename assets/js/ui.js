@@ -6,6 +6,9 @@
 // ─── WEB AUDIO ENGINE ────────────────────────────────────────────────────────
 
 let audioCtx = null;
+let bgmOsc = null;
+let bgmGain = null;
+let bgmInterval = null;
 
 function getAudio() {
   if (!audioCtx) {
@@ -37,6 +40,10 @@ function playChord(freqs, duration = 0.4) {
 }
 
 export const Sound = {
+  init() {
+    const ctx = getAudio();
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+  },
   perfect()   { playChord([523, 659, 784, 1047], 0.6); },
   excellent() { playChord([440, 554, 659], 0.5); },
   good()      { playTone(440, 0.3, 'sine', 0.12); },
@@ -72,6 +79,54 @@ export const Sound = {
       osc.start(ctx.currentTime + t);
       osc.stop(ctx.currentTime + t + 0.3);
     });
+  },
+  playBGM(timeScale = 1) {
+    if(!getSettings().sound) return;
+    const ctx = getAudio(); if (!ctx) return;
+    this.stopBGM();
+
+    const bpm = 120 / timeScale; // gets faster as timeScale goes down (0.6 is fastest)
+    const intervalMs = (60 / bpm) * 1000;
+    
+    let step = 0;
+    // Simple fast driving bassline notes
+    const sequence = [110, 110, 220, 110, 146.83, 110, 164.81, 110];
+
+    bgmInterval = setInterval(() => {
+      if(ctx.state === 'suspended') ctx.resume();
+      const freq = sequence[step % sequence.length];
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = freq;
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      gain.gain.setValueAtTime(0.02, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.15);
+      
+      step++;
+    }, intervalMs / 4); // 16th notes
+  },
+  stopBGM() {
+    if(bgmInterval) {
+      clearInterval(bgmInterval);
+      bgmInterval = null;
+    }
+  },
+  speakVerb(verb) {
+    if(!getSettings().sound || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(verb);
+    utterance.lang = 'fr-FR';
+    utterance.rate = 1.3;
+    utterance.pitch = 0.5; // Aggressive deep voice
+    utterance.volume = 1;
+    window.speechSynthesis.speak(utterance);
   }
 };
 
