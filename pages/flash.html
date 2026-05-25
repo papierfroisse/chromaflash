@@ -220,6 +220,7 @@
 <div class="flash-overlay" id="flash-overlay">
   <div class="mini-num-big" id="overlay-num">1</div>
   <div class="mini-name-big" id="overlay-name">SPOT IT</div>
+  <div class="verb-big" id="overlay-verb" style="font-size:8vw; font-weight:900; color:#FF2A55; transform:rotate(-5deg); text-shadow:8px 8px 0 #111; margin-top:20px; text-transform:uppercase;"></div>
   <div class="mini-score-flash" id="overlay-score" style="display:none"></div>
 </div>
 
@@ -263,25 +264,27 @@
 
   // ─── MINI GAME DEFINITIONS ────────────────────────────────────
   const MINI_GAMES = [
-    { id:'spot',       name:'SPOT IT',       icon:'👁️',  maxPts: 1000, time: 8,  axis: 'color' },
-    { id:'name',       name:'NAME RUSH',     icon:'🏷️',  maxPts: 1000, time: 8,  axis: 'color' },
-    { id:'hex',        name:'HEX BLITZ',     icon:'💻',  maxPts: 1000, time: 10, axis: 'color' },
-    { id:'snap',       name:'RGB SNAP',      icon:'🎚️',  maxPts: 1000, time: 12, axis: 'color' },
-    { id:'warmcool',   name:'CHAUD OU FROID',icon:'🌡️',  maxPts: 1000, time: 5,  axis: 'color' },
-    { id:'complement', name:'COMPLÉMENT',    icon:'🔵',  maxPts: 1000, time: 8,  axis: 'color' },
-    { id:'dark',       name:'+ SOMBRE',      icon:'🌑',  maxPts: 1000, time: 6,  axis: 'color' },
-    { id:'match',      name:'PERFECT MATCH', icon:'🎯',  maxPts: 1000, time: 12, axis: 'color' },
-    { id:'typo',       name:'TYPO RUSH',     icon:'🔤',  maxPts: 1000, time: 8,  axis: 'typo' },
-    { id:'pixel',      name:'PIXEL PERFECT', icon:'📐',  maxPts: 1000, time: 8,  axis: 'precision' },
-    { id:'carreau',    name:'LE CARREAU',    icon:'😤',  maxPts: 1000, time: 5,  axis: 'perception' },
-    { id:'horloge',    name:'L\'HORLOGE',    icon:'⏱️',  maxPts: 1000, time: 6,  axis: 'perception' },
-    { id:'volume',     name:'LE VOLUME',     icon:'📺',  maxPts: 1000, time: 5,  axis: 'rhythm' },
-    { id:'cadre',      name:'LE CADRE',      icon:'🖼️',  maxPts: 1000, time: 6,  axis: 'precision' },
-    { id:'crenage',    name:'LE CRÉNAGE',    icon:'🆎',  maxPts: 1000, time: 8,  axis: 'typo' },
-    { id:'padding',    name:'LA MARGE',      icon:'📦',  maxPts: 1000, time: 8,  axis: 'precision' },
-    { id:'contraste',  name:'LE CONTRASTE',  icon:'👁️',  maxPts: 1000, time: 8,  axis: 'color' },
-    { id:'ratio',      name:'LE RATIO',      icon:'📐',  maxPts: 1000, time: 8,  axis: 'perception' },
-    { id:'saut',       name:'LE GRAND SAUT', icon:'🍄',  maxPts: 1000, time: 15, axis: 'rhythm' },
+    { id:'spot',       name:'SPOT IT',       icon:'👁️',  maxPts: 1000, time: 8,  axis: 'color', verb: 'TROUVE !' },
+    { id:'name',       name:'NAME RUSH',     icon:'🏷️',  maxPts: 1000, time: 8,  axis: 'color', verb: 'NOMME !' },
+    { id:'hex',        name:'HEX BLITZ',     icon:'💻',  maxPts: 1000, time: 10, axis: 'color', verb: 'CODE !' },
+    { id:'snap',       name:'RGB SNAP',      icon:'🎚️',  maxPts: 1000, time: 12, axis: 'color', verb: 'AJUSTE !' },
+    { id:'warmcool',   name:'CHAUD OU FROID',icon:'🌡️',  maxPts: 1000, time: 5,  axis: 'color', verb: 'TÂTE !' },
+    { id:'complement', name:'COMPLÉMENT',    icon:'🔵',  maxPts: 1000, time: 8,  axis: 'color', verb: 'INVERSE !' },
+    { id:'dark',       name:'+ SOMBRE',      icon:'🌑',  maxPts: 1000, time: 6,  axis: 'color', verb: 'SOMBRE !' },
+    { id:'match',      name:'PERFECT MATCH', icon:'🎯',  maxPts: 1000, time: 12, axis: 'color', verb: 'ÉGALE !' },
+    { id:'typo',       name:'TYPO RUSH',     icon:'🔤',  maxPts: 1000, time: 8,  axis: 'typo', verb: 'LIS !' },
+    { id:'pixel',      name:'PIXEL PERFECT', icon:'📐',  maxPts: 1000, time: 8,  axis: 'precision', verb: 'MESURE !' },
+    { id:'carreau',    name:'LE CARREAU',    icon:'😤',  maxPts: 1000, time: 5,  axis: 'perception', verb: 'NETTOIE !' },
+    { id:'horloge',    name:'L\'HORLOGE',    icon:'⏱️',  maxPts: 1000, time: 6,  axis: 'perception', verb: 'ATTENDS !' },
+    { id:'volume',     name:'LE VOLUME',     icon:'📺',  maxPts: 1000, time: 5,  axis: 'rhythm', verb: 'RÈGLE !' },
+    { id:'cadre',      name:'LE CADRE',      icon:'🖼️',  maxPts: 1000, time: 6,  axis: 'precision', verb: 'REDRESSE !' },
+    { id:'crenage',    name:'LE CRÉNAGE',    icon:'🆎',  maxPts: 1000, time: 8,  axis: 'typo', verb: 'ESPACE !' },
+    { id:'padding',    name:'LA MARGE',      icon:'📦',  maxPts: 1000, time: 8,  axis: 'precision', verb: 'CENTRE !' },
+    { id:'contraste',  name:'LE CONTRASTE',  icon:'👁️',  maxPts: 1000, time: 8,  axis: 'color', verb: 'ÉCLAIRE !' },
+    { id:'ratio',      name:'LE RATIO',      icon:'📐',  maxPts: 1000, time: 8,  axis: 'perception', verb: 'DEVINE !' },
+    { id:'saut',       name:'LE GRAND SAUT', icon:'🍄',  maxPts: 1000, time: 15, axis: 'rhythm', verb: 'ESQUIVE !' },
+    { id:'plaque',     name:'LA PLAQUE',     icon:'🏎️',  maxPts: 1000, time: 8,  axis: 'perception', verb: 'MÉMORISE !' },
+    { id:'alignement', name:'L\'ALIGNEMENT', icon:'📏',  maxPts: 1000, time: 6,  axis: 'precision', verb: 'STOPPE !' },
   ];
 
   // Pre-load Typo Fonts
@@ -318,11 +321,13 @@
     const overlay = document.getElementById('flash-overlay');
     const numEl = document.getElementById('overlay-num');
     const nameEl = document.getElementById('overlay-name');
+    const verbEl = document.getElementById('overlay-verb');
     const scoreEl = document.getElementById('overlay-score');
 
     scoreEl.style.display = 'none';
     numEl.textContent = idx + 1;
     nameEl.textContent = MINI_GAMES[idx].icon + ' ' + MINI_GAMES[idx].name;
+    verbEl.textContent = MINI_GAMES[idx].verb || 'GO !';
 
     // If previous score
     if (idx > 0 && gameScores[idx-1] !== undefined) {
@@ -371,6 +376,8 @@
       contraste:  buildContraste,
       ratio:      buildRatio,
       saut:       buildSaut,
+      plaque:     buildPlaque,
+      alignement: buildAlignement,
     };
     builders[mg.id](mg, time);
 
@@ -1798,6 +1805,176 @@
 
     rafId = requestAnimationFrame(loop);
 
+    setTimeout(() => {
+      document.removeEventListener('keydown', keyHandler);
+      cancelAnimationFrame(rafId);
+    }, time * 1000 + 1000);
+  }
+
+  // ─── MINI-GAME 20: LA PLAQUE ──────────────────────────────────
+  function buildPlaque(mg, time) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let plaque = '';
+    for(let i=0; i<6; i++) plaque += chars[Math.floor(Math.random()*chars.length)];
+    // Format XX-XX-XX
+    plaque = plaque.slice(0,2) + '-' + plaque.slice(2,4) + '-' + plaque.slice(4,6);
+
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-md">Lis la plaque de la voiture qui passe !</p>
+      
+      <div id="plaque-scene" style="position:relative; width:100%; height:120px; overflow:hidden; background:#111; border-radius:8px; border:2px solid var(--bg-border); margin-bottom:var(--space-md);">
+        <!-- Voiture -->
+        <div id="plaque-car" style="position:absolute; top:20px; left:-300px; width:200px; height:80px; background:#FF2A55; border-radius:10px 40px 10px 10px; display:flex; align-items:center; justify-content:center;">
+          <div style="background:#FFF; color:#000; font-family:'Space Mono', monospace; font-weight:900; font-size:1.2rem; padding:4px 8px; border:2px solid #000; border-radius:4px;">
+            ${plaque}
+          </div>
+        </div>
+      </div>
+
+      <div id="plaque-input-wrap" style="display:none;">
+        <p class="text-sm text-secondary mb-sm">Quelle était la plaque ?</p>
+        <input type="text" id="plaque-input" class="input input-mono text-center uppercase" placeholder="XX-XX-XX" style="text-transform:uppercase; font-size:1.5rem;" autocomplete="off" spellcheck="false">
+        <button class="btn btn-primary w-full mt-sm" id="plaque-btn">VALIDER</button>
+      </div>
+    `;
+    gameArea.appendChild(card);
+
+    const car = document.getElementById('plaque-car');
+    const inputWrap = document.getElementById('plaque-input-wrap');
+    const inputEl = document.getElementById('plaque-input');
+    const btn = document.getElementById('plaque-btn');
+
+    // Animation de la voiture qui traverse en 0.8s, attend 1 seconde avant de partir
+    setTimeout(() => {
+      if(!canAnswer) return;
+      car.style.transition = 'left 0.6s linear';
+      car.style.left = '100%';
+      Sound.swoosh();
+      
+      // Afficher le champ input juste après le passage
+      setTimeout(() => {
+        if(!canAnswer) return;
+        document.getElementById('plaque-scene').style.display = 'none';
+        inputWrap.style.display = 'block';
+        inputEl.focus();
+      }, 700);
+    }, 1000);
+
+    const submitPlaque = () => {
+      if(!canAnswer) return;
+      canAnswer = false;
+      const val = inputEl.value.toUpperCase().replace(/\s/g, '');
+      const cleanTarget = plaque.replace(/-/g, '');
+      const cleanVal = val.replace(/-/g, '');
+      if (cleanVal === cleanTarget) {
+        Sound.good();
+        inputEl.style.borderColor = '#34D399';
+        onMiniGameEnd(mg.maxPts);
+      } else {
+        Sound.wrong();
+        inputEl.style.borderColor = '#F87171';
+        inputEl.value = plaque;
+        onMiniGameEnd(0);
+      }
+    };
+
+    btn.addEventListener('click', submitPlaque);
+    inputEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter') submitPlaque();
+    });
+  }
+
+  // ─── MINI-GAME 21: L'ALIGNEMENT ──────────────────────────────
+  function buildAlignement(mg, time) {
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-md">Clique au moment précis où le bloc passe au centre !</p>
+      
+      <div style="position:relative; width:100%; height:100px; background:var(--bg-input); border-radius:8px; border:1px solid var(--bg-border); margin-bottom:var(--space-md); overflow:hidden;">
+        <!-- Ligne centrale -->
+        <div style="position:absolute; top:0; bottom:0; left:50%; width:4px; background:#FFD700; transform:translateX(-50%); z-index:1;"></div>
+        <!-- Target safe zone visually -->
+        <div style="position:absolute; top:0; bottom:0; left:calc(50% - 15px); width:30px; background:rgba(255,215,0,0.2); z-index:0;"></div>
+        
+        <!-- Bloc mobile -->
+        <div id="align-block" style="position:absolute; top:10px; bottom:10px; left:0; width:20px; background:#4D96FF; border-radius:4px; z-index:2; border:2px solid #000;"></div>
+      </div>
+      
+      <button class="btn btn-primary w-full" id="align-btn">STOP ! (Espace)</button>
+    `;
+    gameArea.appendChild(card);
+
+    const block = document.getElementById('align-block');
+    const containerWidth = card.querySelector('div[style*="height:100px"]').clientWidth;
+    const blockWidth = 20;
+    const maxLeft = containerWidth - blockWidth;
+    
+    let pos = 0;
+    let speed = maxLeft / 30; // approx 30 frames (0.5s) to cross
+    let direction = 1;
+    let rafId;
+
+    function loop() {
+      if (!canAnswer) return;
+      pos += speed * direction;
+      if (pos >= maxLeft) {
+        pos = maxLeft;
+        direction = -1;
+      } else if (pos <= 0) {
+        pos = 0;
+        direction = 1;
+      }
+      block.style.transform = \`translateX(\${pos}px)\`;
+      rafId = requestAnimationFrame(loop);
+    }
+    
+    rafId = requestAnimationFrame(loop);
+
+    const stopBlock = () => {
+      if (!canAnswer) return;
+      canAnswer = false;
+      cancelAnimationFrame(rafId);
+      
+      const centerOfContainer = containerWidth / 2;
+      const centerOfBlock = pos + (blockWidth / 2);
+      const diff = Math.abs(centerOfContainer - centerOfBlock);
+      
+      // Tolerance = 15px
+      if (diff <= 15) {
+        block.style.background = '#34D399';
+        Sound.good();
+        onMiniGameEnd(mg.maxPts);
+      } else {
+        block.style.background = '#F87171';
+        Sound.wrong();
+        onMiniGameEnd(0);
+      }
+    };
+
+    document.getElementById('align-btn').addEventListener('click', stopBlock);
+    const keyHandler = (e) => {
+      if (e.key === ' ') {
+        e.preventDefault();
+        stopBlock();
+      }
+    };
+    document.addEventListener('keydown', keyHandler);
+    
     setTimeout(() => {
       document.removeEventListener('keydown', keyHandler);
       cancelAnimationFrame(rafId);

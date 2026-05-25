@@ -9,39 +9,82 @@
   <link rel="stylesheet" href="assets/css/design.css">
   <link rel="stylesheet" href="assets/css/animations.css">
   <style>
+    :root {
+      /* Neo-Brutalist Light Theme Override for Menu */
+      --bg-void: #F4F4F0;
+      --bg-card: #FFFFFF;
+      --bg-card-hover: #F8F8F8;
+      --text-primary: #111111;
+      --text-secondary: #444444;
+      --text-muted: #888888;
+      --bg-border: #111111;
+      --bg-input: #EFEFEF;
+      --shadow-lg: 8px 8px 0px #111111;
+    }
     body { 
       padding-top: 60px; 
-      /* Funky animated background for the new vibe */
-      background: radial-gradient(circle at 50% 0%, var(--bg-card), var(--bg-void));
+      background: var(--bg-void);
+      background-image: none; /* Remove dark gradient */
     }
 
     .hero {
-      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1000px;
+      margin: 0 auto;
       padding: var(--space-2xl) var(--space-lg) var(--space-xl);
+      gap: var(--space-xl);
+      flex-wrap: wrap;
+    }
+    
+    .hero-text {
+      flex: 1;
+      min-width: 300px;
+      text-align: left;
+    }
+
+    .hero-image {
+      flex: 1;
+      min-width: 300px;
+      display: flex;
+      justify-content: center;
+    }
+    .hero-image img {
+      width: 100%;
+      max-width: 400px;
+      border: 4px solid #111;
+      border-radius: 20px;
+      box-shadow: 12px 12px 0px #111;
+      background: #FFD700;
+      transform: rotate(2deg);
+      transition: transform 0.3s;
+    }
+    .hero-image img:hover {
+      transform: rotate(-2deg) scale(1.02);
     }
     
     .hero-title {
-      font-size: clamp(3rem, 10vw, 5rem);
+      font-size: clamp(3.5rem, 8vw, 5.5rem);
       font-weight: 900;
-      line-height: 1;
-      letter-spacing: -0.04em;
-      margin-bottom: var(--space-sm);
+      line-height: 0.9;
+      letter-spacing: -0.05em;
+      margin-bottom: var(--space-md);
       text-transform: uppercase;
+      color: #111;
     }
     .hero-title span {
-      background: linear-gradient(135deg, #FF6B6B, #FBBF24, #34D399, #4D96FF, #A78BFA);
-      background-clip: text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-size: 200% auto;
-      animation: shimmer 3s linear infinite;
+      color: #FF2A55;
+      display: inline-block;
+      transform: rotate(-2deg);
     }
     .hero-sub {
-      font-size: 1.1rem;
+      font-size: 1.25rem;
+      font-weight: 600;
       color: var(--text-secondary);
       max-width: 500px;
-      margin: 0 auto var(--space-xl);
-      line-height: 1.5;
+      margin: 0 0 var(--space-xl) 0;
+      line-height: 1.4;
     }
 
     /* MEGA MODE CTA */
@@ -141,10 +184,10 @@
       gap: 8px;
     }
     .chill-card:hover {
-      background: var(--bg-input);
-      border-color: var(--text-muted);
-      transform: translateY(-3px);
-      box-shadow: var(--shadow-lg);
+      background: var(--bg-card-hover);
+      border-color: #111;
+      transform: translateY(-4px);
+      box-shadow: 6px 6px 0px #111;
     }
     .chill-icon { font-size: 2rem; }
     .chill-name { font-weight: 700; font-size: 1rem; }
@@ -170,25 +213,26 @@
 
 <!-- HEADER -->
 <header class="game-header">
-  <span class="logo-text">ChromaFlash</span>
-  <div class="flex gap-sm items-center">
-    <button class="btn-icon" id="settings-btn" title="Paramètres">⚙️</button>
+  <div class="logo-text" style="color:#111;">CHROMA<span style="color:#FF2A55">FLASH</span></div>
+  <div class="flex gap-sm">
+    <button class="btn btn-icon" id="settings-btn" title="Paramètres">⚙️</button>
   </div>
 </header>
 
-<!-- HERO -->
+<!-- HERO SECTION -->
 <div class="hero anim-fadeUp">
-  <h1 class="hero-title">Perfection & <span>Frustration</span></h1>
-  <p class="hero-sub">Le test ultime de perception et de précision. Prouvez que votre œil est infaillible.</p>
-</div>
-
-<!-- MEGA MODE CTA -->
-<div class="mega-mode-container anim-scaleIn delay-1">
-  <a href="pages/flash.html" class="mega-btn tilt-card">
-    <div class="mega-icon">🔥</div>
-    <div class="mega-title">MEGA MODE</div>
-    <div class="mega-sub">Tous les jeux • Rapidité folle • 3 Vies</div>
-  </a>
+  <div class="hero-text">
+    <h1 class="hero-title">L'ENFER<br>DU <span>DESIGNER</span></h1>
+    <p class="hero-sub">Testez votre perception et vos TOCs : Précision, Typo, Couleur et Rythme.</p>
+    <a href="pages/flash.html" class="mega-btn">
+      <div class="mega-icon">⚡</div>
+      <div class="mega-title">MEGA MODE</div>
+      <div class="mega-sub">19 Micro-Jeux Aléatoires</div>
+    </a>
+  </div>
+  <div class="hero-image">
+    <img src="assets/img/pop_art_hero.png" alt="Pop Art Quirky Eye">
+  </div>
 </div>
 
 <!-- CHILL / TRAINING MODE -->
