@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChromaFlash — Le Carreau Mal Callé 😤</title>
+  <link rel="stylesheet" href="css/design.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <style>
+    body { 
+      padding-top: 60px; 
+      min-height: 100dvh; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      background-color: var(--bg-void); /* Darker background */
+      transition: background-color 0.2s;
+    }
+    
+    .game-layout {
+      flex: 1;
+      width: 100%;
+      max-width: 600px;
+      padding: var(--space-xl) var(--space-md);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-lg);
+    }
+
+    /* WarioWare HUD */
+    .wario-hud {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+    .wario-lives { color: #F87171; letter-spacing: 2px; }
+    
+    /* The Tile Wall */
+    .wall-container {
+      width: 100%;
+      aspect-ratio: 1;
+      background: #2A2A2A; /* grout color */
+      padding: 8px;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    
+    .tile-grid {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      gap: 4px; /* grout thickness */
+    }
+
+    .tile {
+      background-color: #F3F4F6;
+      border-radius: 2px;
+      cursor: pointer;
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1);
+      /* Base transform to prevent jump on anomaly */
+      transform: rotate(0deg); 
+    }
+    
+    /* Interaction for non-touch to make it feel tactile */
+    .tile:active { background-color: #E5E7EB; }
+
+    /* Result modal */
+    .result-overlay {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-xl) var(--space-lg);
+      text-align: center;
+    }
+    .result-overlay.show { display: flex; animation: fadeUp 0.4s var(--ease-out) both; }
+  </style>
+</head>
+<body>
+
+<header class="game-header" style="width:100%; max-width:600px">
+  <a href="index.html" class="back-btn">← Abandonner</a>
+  <div class="text-xs text-muted" id="header-title">😤 Le Carreau Mal Callé</div>
+</header>
+
+<div class="game-layout" id="game-layout">
+  
+  <div class="wario-hud anim-fadeDown">
+    <div>SCORE: <span id="hud-score">0</span></div>
+    <div>Ronde <span id="hud-round">1</span></div>
+    <div class="wario-lives" id="hud-lives">❤️❤️❤️</div>
+  </div>
+
+  <div class="wall-container anim-scaleIn" id="wall-container" style="display:none">
+    <div class="tile-grid" id="tile-grid"></div>
+  </div>
+
+  <div class="text-center mt-xl anim-fadeUp" id="start-screen">
+    <h2 class="text-2xl weight-700 mb-md">Le Carreau Mal Callé</h2>
+    <p class="text-secondary mb-lg">Trouve le carreau qui n'est pas parfaitement droit avant la fin du temps imparti.</p>
+    <button class="btn btn-primary btn-lg w-full" id="btn-start">C'EST PARTI</button>
+  </div>
+
+</div>
+
+<!-- FINAL -->
+<div id="final-layout" class="result-overlay" style="margin-top: 60px;">
+  <div class="card text-center" style="max-width: 400px; width:100%;">
+    <div class="text-4xl mb-sm" id="fin-emoji">😵</div>
+    <div class="text-2xl weight-700 mb-lg text-danger" id="fin-title">CRISE DE NERFS</div>
+    <div class="text-sm text-muted mb-sm">Score final</div>
+    <div class="score-display mb-xl" id="fin-score">0</div>
+    <div class="text-sm mb-lg">Tu as survécu jusqu'à la ronde <span id="fin-round" class="weight-700"></span>.</div>
+    <button class="btn btn-primary btn-lg w-full mb-md" onclick="location.reload()">Réessayer</button>
+    <a href="index.html" class="btn btn-ghost w-full">Retour au menu</a>
+  </div>
+</div>
+
+<script type="module">
+  import { WarioEngine } from './js/frustration.js';
+  import { Sound, animateCounter } from './js/ui.js';
+
+  const gridEl = document.getElementById('tile-grid');
+  const wallEl = document.getElementById('wall-container');
+  const startScreen = document.getElementById('start-screen');
+  
+  const scoreEl = document.getElementById('hud-score');
+  const roundEl = document.getElementById('hud-round');
+  const livesEl = document.getElementById('hud-lives');
+
+  let engine;
+
+  function initGame() {
+    startScreen.style.display = 'none';
+    wallEl.style.display = 'block';
+
+    engine = new WarioEngine(
+      (round, time) => buildGrid(round), // Start
+      () => { gridEl.innerHTML = ''; },  // End
+      (score, round) => showFinal(score, round) // GameOver
+    );
+
+    engine.startNextRound();
+  }
+
+  document.getElementById('btn-start').addEventListener('click', () => {
+    Sound.click();
+    initGame();
+  });
+
+  function buildGrid(round) {
+    // Difficuté: Taille de la grille augmente, rotation diminue
+    // Round 1: 3x3, 5deg
+    // Round 5: 6x6, 3deg
+    // Round 10: 10x10, 1.5deg
+    // Round 20: 15x15, 0.5deg
+    
+    let size = 3 + Math.floor(round / 2);
+    size = Math.min(size, 16); // Max 16x16
+    
+    let rotation = 5 - (round * 0.2);
+    rotation = Math.max(0.5, rotation); // Min 0.5 degrees !
+    
+    // Randomize direction of rotation (left or right)
+    rotation = rotation * (Math.random() > 0.5 ? 1 : -1);
+
+    gridEl.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+    gridEl.style.gridTemplateRows = `repeat(${size}, 1fr)`;
+    
+    const totalTiles = size * size;
+    const anomalyIndex = Math.floor(Math.random() * totalTiles);
+
+    for (let i = 0; i < totalTiles; i++) {
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      
+      if (i === anomalyIndex) {
+        tile.style.transform = `rotate(${rotation}deg)`;
+        tile.onclick = () => {
+          Sound.good();
+          engine.winRound();
+        };
+      } else {
+        tile.onclick = () => {
+          Sound.wrong();
+          engine.failRound(false);
+        };
+      }
+      
+      gridEl.appendChild(tile);
+    }
+
+    // Update HUD
+    scoreEl.textContent = engine.score;
+    roundEl.textContent = round;
+    livesEl.textContent = '❤️'.repeat(engine.lives);
+  }
+
+  function showFinal(score, round) {
+    document.getElementById('game-layout').style.display = 'none';
+    const finalLayout = document.getElementById('final-layout');
+    finalLayout.classList.add('show');
+    
+    document.getElementById('fin-round').textContent = round;
+    animateCounter(document.getElementById('fin-score'), 0, score, 1000);
+    Sound.bad();
+  }
+
+</script>
+</body>
+</html>
