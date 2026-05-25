@@ -63,6 +63,32 @@
   to   { transform: scale(1)   translateY(0);    opacity: 1; }
 }
 
+@keyframes screenShake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  10% { transform: translate(-10px, -10px) rotate(-2deg); }
+  20% { transform: translate(10px, 10px) rotate(2deg); }
+  30% { transform: translate(-15px, 5px) rotate(-1deg); }
+  40% { transform: translate(15px, -5px) rotate(1deg); }
+  50% { transform: translate(-10px, 10px) rotate(-2deg); }
+  60% { transform: translate(10px, -10px) rotate(2deg); }
+  70% { transform: translate(-5px, -5px) rotate(-1deg); }
+  80% { transform: translate(5px, 5px) rotate(1deg); }
+  90% { transform: translate(-2px, -2px) rotate(0deg); }
+}
+
+@keyframes punchPop {
+  0%   { transform: scale(0.2); opacity: 0; }
+  40%  { transform: scale(1.4); opacity: 1; }
+  70%  { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+@keyframes screenFlash {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; background-color: #FFF; }
+  100% { opacity: 0; }
+}
+
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50%       { transform: translateY(-12px); }
@@ -135,6 +161,21 @@
 .delay-6 { animation-delay: 0.30s; }
 .delay-7 { animation-delay: 0.35s; }
 .delay-8 { animation-delay: 0.40s; }
+
+/* Dopamine effects */
+.screen-shake {
+  animation: screenShake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+.punch-pop {
+  animation: punchPop 0.4s var(--ease-spring) both;
+}
+.screen-flash-overlay {
+  position: fixed; inset: 0;
+  background-color: white;
+  z-index: 9999;
+  pointer-events: none;
+  animation: screenFlash 0.3s ease-out both;
+}
 
 /* ─── SPECIFIC ANIMATIONS ────────────────────────────────────── */
 

@@ -245,17 +245,48 @@ export function showToast(message, type = 'info', duration = 2000) {
   }, duration);
 }
 
+// ─── DOPAMINE EFFECTS ──────────────────────────────────────────────────────────
+
+export function triggerScreenShake() {
+  document.body.classList.remove('screen-shake');
+  void document.body.offsetWidth; // trigger reflow
+  document.body.classList.add('screen-shake');
+  setTimeout(() => document.body.classList.remove('screen-shake'), 400);
+}
+
+export function triggerScreenFlash() {
+  const flash = document.createElement('div');
+  flash.className = 'screen-flash-overlay';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 300);
+}
+
 // ─── PLAY SOUND FOR RANK ─────────────────────────────────────────────────────
 
 export function playSoundForScore(score, max) {
   const pct = score / max;
   const s = getSettings();
-  if (!s.sound) return;
-  if (pct >= 0.98) { Sound.perfect(); launchConfetti(60); }
-  else if (pct >= 0.90) { Sound.excellent(); launchConfetti(30); }
-  else if (pct >= 0.75) { Sound.good(); }
-  else if (pct >= 0.50) { Sound.ok(); }
-  else { Sound.bad(); }
+  
+  if (pct >= 0.98) {
+    if (s.sound) Sound.perfect();
+    launchConfetti(60);
+    triggerScreenFlash();
+  }
+  else if (pct >= 0.90) { 
+    if (s.sound) Sound.excellent(); 
+    launchConfetti(30); 
+    triggerScreenFlash();
+  }
+  else if (pct >= 0.75) { 
+    if (s.sound) Sound.good(); 
+  }
+  else if (pct >= 0.50) { 
+    if (s.sound) Sound.ok(); 
+  }
+  else { 
+    if (s.sound) Sound.bad(); 
+    triggerScreenShake();
+  }
 }
 
 // ─── SETTINGS PANEL ──────────────────────────────────────────────────────────

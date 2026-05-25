@@ -28,10 +28,10 @@
   /* Rank colors */
   --rank-perfect:   #FFD700;
   --rank-excellent: #A78BFA;
-  --rank-great:     #34D399;
+  --rank-great:     #10FF98; /* Neon Green */
   --rank-good:      #60A5FA;
   --rank-ok:        #FBBF24;
-  --rank-bad:       #F87171;
+  --rank-bad:       #FF2A55; /* Neon Red */
 
   /* Text */
   --text-primary:   #F0F0FA;
