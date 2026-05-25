@@ -151,7 +151,6 @@
       const btn = document.createElement('button');
       btn.className = 'typo-btn';
       btn.textContent = font.name;
-      btn.style.fontFamily = `"${font.name}", ${font.category}`; // The button also uses the font!
       btn.onclick = () => handleGuess(btn, font.name);
       gridEl.appendChild(btn);
     });
