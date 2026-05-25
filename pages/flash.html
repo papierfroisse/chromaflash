@@ -232,7 +232,7 @@
       <div class="text-secondary text-sm mt-sm mb-lg">Session terminée !</div>
 
       <div class="score-display" id="final-total">0</div>
-      <div class="score-max mb-lg">/ 9 000</div>
+      <div class="score-max mb-lg" id="final-max">/ 9 000</div>
 
       <div class="minigame-scores" id="mg-scores-list"></div>
 
@@ -1141,6 +1141,7 @@
 
     const max = MINI_GAMES.reduce((s, m) => s + m.maxPts, 0);
     const pct = totalPts / max;
+    document.getElementById('final-max').textContent = `/ ${max.toLocaleString()}`;
 
     let rank, rankColor;
     if (pct >= 0.95) { rank = 'S'; rankColor = '#FFD700'; }
