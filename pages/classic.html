@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChromaFlash — Mode Classic</title>
-  <link rel="stylesheet" href="css/design.css">
-  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="../assets/css/design.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
   <style>
     body { padding: 60px 0 40px; min-height: 100dvh; display: flex; flex-direction: column; }
 
@@ -168,7 +168,7 @@
 
 <!-- HEADER -->
 <header class="game-header">
-  <a href="index.html" class="back-btn">← Accueil</a>
+  <a href="../index.html" class="back-btn">← Accueil</a>
   <div class="flex items-center gap-md">
     <div class="round-dots" id="round-dots"></div>
     <div class="timer-ring-wrapper" id="timer-wrapper">
@@ -382,7 +382,7 @@
 
       <div class="flex flex-col gap-sm mt-lg">
         <button class="btn btn-primary btn-lg w-full" id="play-again-btn">Rejouer</button>
-        <a href="index.html" class="btn btn-ghost w-full">← Menu</a>
+        <a href="../index.html" class="btn btn-ghost w-full">← Menu</a>
         <button class="btn btn-ghost w-full" id="share-btn">📋 Copier mon score</button>
       </div>
     </div>
@@ -393,14 +393,14 @@
   import {
     hexToRgb, rgbToHex, rgbToCmyk, cmykToRgb, rgbToHsl, hslToRgb,
     randomColor, rgbToLab
-  } from './js/color.js';
-  import { GameSession } from './js/score.js';
+  } from '../assets/js/color.js';
+  import { GameSession } from '../assets/js/score.js';
   import {
     getSettings, getSwatchBgColor, playSoundForScore, animateCounter,
     getDeltaLabel, getDeltaClass, getDeltaBarWidth, getDeltaBarColor,
     updateRoundDots, updateTimerRing, showToast, copyScore, launchConfetti, Sound,
     generateShareImage
-  } from './js/ui.js';
+  } from '../assets/js/ui.js';
 
   // ─── STATE ───────────────────────────────────────────────────
   const settings = getSettings();

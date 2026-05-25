@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChromaFlash — Daily Challenge 📅</title>
-  <link rel="stylesheet" href="css/design.css">
-  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="../assets/css/design.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
   <style>
     body { padding-top: 60px; min-height: 100dvh; display: flex; flex-direction: column; }
     .daily-layout {
@@ -51,7 +51,7 @@
 <body>
 
 <header class="game-header">
-  <a href="index.html" class="back-btn">← Accueil</a>
+  <a href="../index.html" class="back-btn">← Accueil</a>
   <div class="text-sm font-mono weight-700" id="date-label"></div>
   <div class="text-xs text-muted">📅 Daily Challenge</div>
 </header>
@@ -124,13 +124,13 @@
     <button class="btn btn-primary btn-lg w-full mb-md" id="share-btn">
       📸 PARTAGER L'IMAGE
     </button>
-    <a href="index.html" class="btn btn-ghost w-full">Retour à l'accueil</a>
+    <a href="../index.html" class="btn btn-ghost w-full">Retour à l'accueil</a>
   </div>
 </div>
 
 <script type="module">
-  import { getDailyColor, rgbToLab, deltaE00, computeScore, getRank, hslToRgb, rgbToHex } from './js/color.js';
-  import { Sound, animateCounter, launchConfetti, generateShareImage } from './js/ui.js';
+  import { getDailyColor, rgbToLab, deltaE00, computeScore, getRank, hslToRgb, rgbToHex } from '../assets/js/color.js';
+  import { Sound, animateCounter, launchConfetti, generateShareImage } from '../assets/js/ui.js';
 
   const todayStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   const targetRgb = getDailyColor(todayStr);

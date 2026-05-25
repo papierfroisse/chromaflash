@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChromaFlash — Le Volume de la TV 📺</title>
-  <link rel="stylesheet" href="css/design.css">
-  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="../assets/css/design.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
   <style>
     body { 
       padding-top: 60px; 
@@ -95,7 +95,7 @@
 <body>
 
 <header class="game-header" style="width:100%; max-width:600px">
-  <a href="index.html" class="back-btn">← Abandonner</a>
+  <a href="../index.html" class="back-btn">← Abandonner</a>
   <div class="text-xs text-muted">📺 Le Volume de la TV</div>
 </header>
 
@@ -140,13 +140,13 @@
     <div class="score-display mb-xl" id="fin-score">0</div>
     <div class="text-sm mb-lg">Tu as survécu jusqu'à la ronde <span id="fin-round" class="weight-700"></span>.</div>
     <button class="btn btn-primary btn-lg w-full mb-md" onclick="location.reload()">Réessayer</button>
-    <a href="index.html" class="btn btn-ghost w-full">Retour au menu</a>
+    <a href="../index.html" class="btn btn-ghost w-full">Retour au menu</a>
   </div>
 </div>
 
 <script type="module">
-  import { WarioEngine } from './js/frustration.js';
-  import { Sound, animateCounter, triggerScreenShake, triggerScreenFlash } from './js/ui.js';
+  import { WarioEngine } from '../assets/js/frustration.js';
+  import { Sound, animateCounter, triggerScreenShake, triggerScreenFlash } from '../assets/js/ui.js';
 
   const gameArea = document.getElementById('game-area');
   const startScreen = document.getElementById('start-screen');

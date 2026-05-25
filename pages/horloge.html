@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ChromaFlash — Le Cadre de Travers 🖼️</title>
-  <link rel="stylesheet" href="css/design.css">
-  <link rel="stylesheet" href="css/animations.css">
+  <title>ChromaFlash — L'Horloge Mal Réglée ⏱️</title>
+  <link rel="stylesheet" href="../assets/css/design.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
   <style>
     body { 
       padding-top: 60px; 
@@ -40,63 +40,74 @@
     }
     .wario-lives { color: #F87171; letter-spacing: 2px; }
     
-    /* The Picture Frame */
-    .wall-container {
-      width: 100%;
-      height: 350px;
-      background: repeating-linear-gradient(
-        0deg,
-        #1E1E28,
-        #1E1E28 20px,
-        #2A2A35 20px,
-        #2A2A35 22px
-      );
-      border-radius: 16px;
+    /* The Clock */
+    .clock-container {
       position: relative;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      box-shadow: inset 0 10px 40px rgba(0,0,0,0.5);
-      margin: var(--space-xl) 0;
-      overflow: hidden;
+      width: 300px;
+      height: 300px;
+      background: var(--bg-card);
+      border: 4px solid var(--bg-border);
+      border-radius: 50%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 4px 10px rgba(0,0,0,0.1);
+      margin: var(--space-2xl) 0;
     }
 
-    .frame {
-      width: 200px;
-      height: 250px;
-      background: #E5E7EB;
-      border: 12px solid #8B5A2B;
-      border-radius: 4px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5), 10px 10px 0px rgba(0,0,0,0.2);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      transition: transform 0.05s linear;
-      position: relative;
+    /* Clock markers (12, 3, 6, 9) */
+    .clock-marker {
+      position: absolute;
+      background: var(--text-muted);
+      border-radius: 999px;
     }
+    .marker-12, .marker-6 { width: 4px; height: 20px; left: calc(50% - 2px); }
+    .marker-3, .marker-9 { width: 20px; height: 4px; top: calc(50% - 2px); }
+    
+    .marker-12 { top: 10px; }
+    .marker-6 { bottom: 10px; }
+    .marker-3 { right: 10px; }
+    .marker-9 { left: 10px; }
 
-    /* The picture inside */
-    .picture {
-      width: 80%;
-      height: 80%;
-      background: linear-gradient(135deg, #60A5FA, #A78BFA);
-      border-radius: 2px;
-      box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 3rem;
-    }
-
-    /* Target guide (hidden by default) */
-    .level-guide {
+    /* The Hand */
+    .clock-hand-wrap {
       position: absolute;
       width: 100%;
-      height: 2px;
+      height: 100%;
+      top: 0; left: 0;
+      /* Rotate this wrapper to rotate the hand from the center */
+      transition: transform 0.05s linear;
+      transform-origin: center center;
+    }
+    .clock-hand {
+      position: absolute;
+      bottom: 50%;
+      left: calc(50% - 3px);
+      width: 6px;
+      height: 110px;
+      background: #F87171;
+      border-radius: 999px 999px 0 0;
+      transform-origin: bottom center;
+    }
+    .clock-center-dot {
+      position: absolute;
+      top: calc(50% - 8px);
+      left: calc(50% - 8px);
+      width: 16px;
+      height: 16px;
+      background: #FFF;
+      border-radius: 50%;
+      border: 4px solid #F87171;
+    }
+
+    /* Target guide (optional, hidden by default but shown briefly on win/loss) */
+    .target-guide {
+      position: absolute;
+      bottom: 50%;
+      left: calc(50% - 1px);
+      width: 2px;
+      height: 120px;
       background: #34D399;
+      transform-origin: bottom center;
       opacity: 0;
       pointer-events: none;
-      z-index: 10;
     }
 
     /* Result modal */
@@ -114,8 +125,8 @@
 <body>
 
 <header class="game-header" style="width:100%; max-width:600px">
-  <a href="index.html" class="back-btn">← Abandonner</a>
-  <div class="text-xs text-muted">🖼️ Le Cadre de Travers</div>
+  <a href="../index.html" class="back-btn">← Abandonner</a>
+  <div class="text-xs text-muted">😤 L'Horloge Mal Réglée</div>
 </header>
 
 <div class="game-layout" id="game-layout">
@@ -127,28 +138,35 @@
   </div>
 
   <div class="text-center w-full" id="game-area" style="display:none">
-    <div class="text-secondary mb-sm">Redresse ce cadre parfaitement !</div>
-    <div class="text-xs text-muted mb-lg">(Flèches ← / → du clavier, ou tapote les côtés)</div>
+    <div class="text-secondary mb-sm">Ajuste l'aiguille pour qu'elle soit parfaitement alignée !</div>
+    <div class="text-xs text-muted mb-lg">(Flèches ← / → du clavier, ou tapote les côtés de l'horloge)</div>
     
-    <div class="wall-container anim-scaleIn">
-      <div class="level-guide" id="level-guide"></div>
-      <div class="frame" id="frame">
-        <div class="picture">🏔️</div>
+    <div class="clock-container anim-scaleIn" id="clock-container">
+      <div class="clock-marker marker-12"></div>
+      <div class="clock-marker marker-3"></div>
+      <div class="clock-marker marker-6"></div>
+      <div class="clock-marker marker-9"></div>
+
+      <div class="target-guide" id="target-guide"></div>
+
+      <div class="clock-hand-wrap" id="hand-wrap">
+        <div class="clock-hand"></div>
       </div>
-      
+      <div class="clock-center-dot"></div>
+
       <!-- Touch zones for mobile -->
       <div id="touch-left" style="position:absolute; top:0; left:0; width:50%; height:100%; z-index:10"></div>
       <div id="touch-right" style="position:absolute; top:0; right:0; width:50%; height:100%; z-index:10"></div>
     </div>
 
     <button class="btn btn-primary btn-lg w-full" id="btn-validate">
-      C'EST DROIT !
+      C'EST PARFAIT !
     </button>
   </div>
 
   <div class="text-center mt-xl anim-fadeUp" id="start-screen">
-    <h2 class="text-2xl weight-700 mb-md">Le Cadre de Travers</h2>
-    <p class="text-secondary mb-lg">Ce tableau est accroché de travers, c'est insupportable.<br>Redresse-le au millimètre près avant la fin du temps !</p>
+    <h2 class="text-2xl weight-700 mb-md">L'Horloge Mal Réglée</h2>
+    <p class="text-secondary mb-lg">L'aiguille est très légèrement décalée.<br>Utilise les flèches du clavier pour l'aligner parfaitement sur une heure pile avant la fin du temps !</p>
     <button class="btn btn-primary btn-lg w-full" id="btn-start">C'EST PARTI</button>
   </div>
 
@@ -157,19 +175,19 @@
 <!-- FINAL -->
 <div id="final-layout" class="result-overlay" style="margin-top: 60px;">
   <div class="card text-center" style="max-width: 400px; width:100%;">
-    <div class="text-4xl mb-sm" id="fin-emoji">🖼️</div>
+    <div class="text-4xl mb-sm" id="fin-emoji">⏰</div>
     <div class="text-2xl weight-700 mb-lg text-danger" id="fin-title">TROP TARD !</div>
     <div class="text-sm text-muted mb-sm">Score final</div>
     <div class="score-display mb-xl" id="fin-score">0</div>
     <div class="text-sm mb-lg">Tu as survécu jusqu'à la ronde <span id="fin-round" class="weight-700"></span>.</div>
     <button class="btn btn-primary btn-lg w-full mb-md" onclick="location.reload()">Réessayer</button>
-    <a href="index.html" class="btn btn-ghost w-full">Retour au menu</a>
+    <a href="../index.html" class="btn btn-ghost w-full">Retour au menu</a>
   </div>
 </div>
 
 <script type="module">
-  import { WarioEngine } from './js/frustration.js';
-  import { Sound, animateCounter, triggerScreenShake, triggerScreenFlash } from './js/ui.js';
+  import { WarioEngine } from '../assets/js/frustration.js';
+  import { Sound, animateCounter, launchConfetti } from '../assets/js/ui.js';
 
   const gameArea = document.getElementById('game-area');
   const startScreen = document.getElementById('start-screen');
@@ -178,12 +196,15 @@
   const roundEl = document.getElementById('hud-round');
   const livesEl = document.getElementById('hud-lives');
 
-  const frame = document.getElementById('frame');
-  const levelGuide = document.getElementById('level-guide');
+  const handWrap = document.getElementById('hand-wrap');
+  const targetGuide = document.getElementById('target-guide');
   const btnValidate = document.getElementById('btn-validate');
 
   let engine;
+  
+  // Game variables
   let currentAngle = 0;
+  let targetAngle = 0;
   let isWaiting = false;
   let tolerance = 1; // Margin of error in degrees
   let step = 0.5;    // Rotation step in degrees
@@ -193,9 +214,9 @@
     gameArea.style.display = 'block';
 
     engine = new WarioEngine(
-      (round, time) => startRound(round),
-      () => {},
-      (score, round) => showFinal(score, round)
+      (round, time) => startRound(round), // Start
+      () => {},  // End handled inside validate
+      (score, round) => showFinal(score, round) // GameOver
     );
 
     engine.startNextRound();
@@ -209,19 +230,22 @@
   function startRound(round) {
     isWaiting = false;
     
-    // Tolerance gets stricter
+    // As rounds progress, tolerance gets stricter and step gets finer
     tolerance = Math.max(0.2, 1.5 - (round * 0.1));
     step = Math.max(0.1, 1 - (round * 0.05));
     
-    // Random angle between -15 and 15 degrees (but not too close to 0)
-    let angle = 0;
-    while(Math.abs(angle) < 4) {
-      angle = (Math.random() - 0.5) * 30;
-    }
-    currentAngle = angle;
+    // Choose a random cardinal direction for the target
+    const bases = [0, 90, 180, 270];
+    targetAngle = bases[Math.floor(Math.random() * bases.length)];
+    
+    // Add a small initial error (e.g., between 2 and 5 degrees)
+    const errorMagnitude = 2 + Math.random() * 3;
+    const direction = Math.random() > 0.5 ? 1 : -1;
+    currentAngle = targetAngle + (errorMagnitude * direction);
 
-    levelGuide.style.opacity = '0';
-    updateFrame();
+    targetGuide.style.opacity = '0';
+    targetGuide.style.transform = `rotate(${targetAngle}deg)`;
+    updateHand();
 
     // Update HUD
     scoreEl.textContent = engine.score;
@@ -229,27 +253,27 @@
     livesEl.textContent = '❤️'.repeat(engine.lives);
   }
 
-  function updateFrame() {
-    frame.style.transform = `rotate(${currentAngle}deg)`;
+  function updateHand() {
+    handWrap.style.transform = `rotate(${currentAngle}deg)`;
   }
 
   // --- CONTROLS ---
   function rotateLeft() {
     if (isWaiting) return;
     currentAngle -= step;
-    updateFrame();
+    updateHand();
   }
   
   function rotateRight() {
     if (isWaiting) return;
     currentAngle += step;
-    updateFrame();
+    updateHand();
   }
 
   document.addEventListener('keydown', (e) => {
-    if (gameArea.style.display === 'none') return;
     if (e.key === 'ArrowLeft') { e.preventDefault(); rotateLeft(); }
     if (e.key === 'ArrowRight') { e.preventDefault(); rotateRight(); }
+    // Validation rapide avec Entrée ou Espace
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); validate(); }
   });
 
@@ -267,18 +291,19 @@
     if (isWaiting) return;
     isWaiting = true;
 
-    levelGuide.style.opacity = '1';
+    // Show the target guide temporarily
+    targetGuide.style.opacity = '1';
 
-    let diff = Math.abs(currentAngle);
+    // Normalize angles (handle wrapping around 360/0)
+    let diff = Math.abs((currentAngle % 360) - (targetAngle % 360));
+    if (diff > 180) diff = 360 - diff; // shortest path
 
     if (diff <= tolerance) {
       Sound.good();
-      triggerScreenFlash();
       engine.winRound();
     } else {
       Sound.wrong();
-      triggerScreenShake();
-      engine.failRound(false);
+      engine.failRound(false); // not a timeout
     }
   }
 

@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChromaFlash — Mode Survie 💀</title>
-  <link rel="stylesheet" href="css/design.css">
-  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="../assets/css/design.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
   <style>
     body { padding-top: 60px; min-height: 100dvh; display: flex; flex-direction: column; }
 
@@ -200,7 +200,7 @@
 <body>
 
 <header class="game-header">
-  <a href="index.html" class="back-btn">← Accueil</a>
+  <a href="../index.html" class="back-btn">← Accueil</a>
   <div class="flex items-center gap-md">
     <div class="lives" id="lives-display">
       <div class="life" id="life-1"></div>
@@ -377,7 +377,7 @@
 
   <div class="flex flex-col gap-sm" style="width:100%;max-width:400px">
     <button class="btn btn-primary btn-lg w-full" id="restart-btn">Recommencer</button>
-    <a href="index.html" class="btn btn-ghost w-full">← Menu</a>
+    <a href="../index.html" class="btn btn-ghost w-full">← Menu</a>
     <button class="btn btn-ghost w-full" id="share-btn">📋 Partager</button>
   </div>
 </div>
@@ -385,12 +385,12 @@
 <script type="module">
   import {
     randomColor, rgbToHex, hexToRgb, computeScore, getRank, rgbToLab, deltaE00
-  } from './js/color.js';
-  import { SurvivalSession } from './js/score.js';
+  } from '../assets/js/color.js';
+  import { SurvivalSession } from '../assets/js/score.js';
   import {
     getSettings, getSwatchBgColor, Sound, animateCounter,
     getDeltaLabel, getDeltaBarColor, showToast, launchConfetti, copyScore, updateTimerRing
-  } from './js/ui.js';
+  } from '../assets/js/ui.js';
 
   const settings = getSettings();
 

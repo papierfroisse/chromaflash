@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChromaFlash — Pixel Perfect 📐</title>
-  <link rel="stylesheet" href="css/design.css">
-  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="../assets/css/design.css">
+  <link rel="stylesheet" href="../assets/css/animations.css">
   <style>
     body { padding-top: 60px; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; }
     
@@ -88,7 +88,7 @@
 <body>
 
 <header class="game-header" style="width:100%; max-width:600px">
-  <a href="index.html" class="back-btn">← Accueil</a>
+  <a href="../index.html" class="back-btn">← Accueil</a>
   <div class="text-xs text-muted" id="score-label">Score: 0 / 5</div>
   <div class="text-xs text-muted">📐 Pixel Perfect</div>
 </header>
@@ -128,13 +128,13 @@
     <div class="text-sm text-muted mb-sm">Score final</div>
     <div class="score-display mb-xl" id="fin-score">0</div>
     <button class="btn btn-primary btn-lg w-full mb-md" onclick="location.reload()">Rejouer</button>
-    <a href="index.html" class="btn btn-ghost w-full">Retour au menu</a>
+    <a href="../index.html" class="btn btn-ghost w-full">Retour au menu</a>
   </div>
 </div>
 
 <script type="module">
-  import { getDistance, computePixelScore, getPixelRank } from './js/composition.js';
-  import { Sound, animateCounter, launchConfetti, showToast } from './js/ui.js';
+  import { getDistance, computePixelScore, getPixelRank } from '../assets/js/composition.js';
+  import { Sound, animateCounter, launchConfetti, showToast } from '../assets/js/ui.js';
 
   const TOTAL_ROUNDS = 5;
   const MAX_PER_ROUND = 5000;
