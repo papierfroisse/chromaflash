@@ -48,7 +48,6 @@
     }
     .draggable-box:active { cursor: grabbing; }
 
-    /* Crosshairs for the real center (hidden until reveal) */
     .target-box {
       position: absolute;
       width: 80px;
@@ -56,6 +55,8 @@
       border: 2px dashed rgba(255,255,255,0.3);
       border-radius: var(--radius-md);
       pointer-events: none;
+      transition: opacity 0.3s var(--ease-out);
+      opacity: 1;
     }
     .real-center-h, .real-center-v {
       position: absolute;
@@ -180,6 +181,9 @@
     boxW = bRect.width;
     boxH = bRect.height;
 
+    // Show target box
+    targetBox.style.opacity = '1';
+
     // Randomize TARGET position
     targetX = Math.random() * (canvasW - boxW);
     targetY = Math.random() * (canvasH - boxH);
@@ -213,6 +217,7 @@
     startBoxX = boxX;
     startBoxY = boxY;
     box.style.transition = 'none';
+    targetBox.style.opacity = '0'; // Hide target on drag start
   }
   
   function onPointerMove(e) {
@@ -240,12 +245,14 @@
   document.addEventListener('keydown', (e) => {
     if (isWaiting) return;
     let step = e.shiftKey ? 10 : 1;
+    let moved = false;
     switch (e.key) {
-      case 'ArrowUp':    setBoxPos(boxX, boxY - step); e.preventDefault(); break;
-      case 'ArrowDown':  setBoxPos(boxX, boxY + step); e.preventDefault(); break;
-      case 'ArrowLeft':  setBoxPos(boxX - step, boxY); e.preventDefault(); break;
-      case 'ArrowRight': setBoxPos(boxX + step, boxY); e.preventDefault(); break;
+      case 'ArrowUp':    setBoxPos(boxX, boxY - step); moved = true; e.preventDefault(); break;
+      case 'ArrowDown':  setBoxPos(boxX, boxY + step); moved = true; e.preventDefault(); break;
+      case 'ArrowLeft':  setBoxPos(boxX - step, boxY); moved = true; e.preventDefault(); break;
+      case 'ArrowRight': setBoxPos(boxX + step, boxY); moved = true; e.preventDefault(); break;
     }
+    if (moved) targetBox.style.opacity = '0'; // Hide target on move
   });
 
   // --- VALIDATION ---
@@ -270,6 +277,7 @@
     crossV.style.left = (targetX + boxW/2 - 1) + 'px';
     crossV.style.top = (targetY + boxH/2 - 20) + 'px';
 
+    targetBox.style.opacity = '1'; // Bring target back to show exact match
     crossH.style.display = 'block';
     crossV.style.display = 'block';
     
