@@ -34,6 +34,9 @@
     { id:'crenage',    name:'LE CRÉNAGE',    icon:'🆎',  maxPts: 1000, time: 8,  axis: 'typo', verb: 'ESPACE !' },
     { id:'padding',    name:'LA MARGE',      icon:'📦',  maxPts: 1000, time: 8,  axis: 'precision', verb: 'CENTRE !' },
     { id:'contraste',  name:'LE CONTRASTE',  icon:'👁️',  maxPts: 1000, time: 8,  axis: 'color', verb: 'ÉCLAIRE !' },
+    { id:'gratte',     name:'LE GRATTE-GRATTE',icon:'🪙',maxPts: 1000, time: 8,  axis: 'perception', verb: 'EFFACE !' },
+    { id:'focus',      name:'LA MISE AU POINT',icon:'📸',maxPts: 1000, time: 8,  axis: 'perception', verb: 'FOCALISE !' },
+    { id:'glitch',     name:'LE GLITCH',     icon:'📺',  maxPts: 1000, time: 10, axis: 'perception', verb: 'RÉPARE !' },
     { id:'ratio',      name:'LE RATIO',      icon:'📐',  maxPts: 1000, time: 8,  axis: 'perception', verb: 'DEVINE !' },
     { id:'boss',       name:'LA SÉCURITÉ',   icon:'🛡️',  maxPts: 2000, time: 12, axis: 'perception', verb: 'PURGE !' },
     { id:'saut',       name:'LE GRAND SAUT', icon:'🍄',  maxPts: 1000, time: 15, axis: 'rhythm', verb: 'ESQUIVE !' },
@@ -146,6 +149,9 @@
       plaque:     buildPlaque,
       alignement: buildAlignement,
       boss:       buildBoss,
+      gratte:     buildGratte,
+      focus:      buildFocus,
+      glitch:     buildGlitch,
     };
     builders[mg.id](mg, time);
 
@@ -1833,6 +1839,195 @@
       cell.addEventListener('mouseup', () => { cell.style.transform = 'none'; });
       cell.dataset.type = type;
       grid.appendChild(cell);
+    });
+  }
+
+  // ─── MINI-GAME: LE GRATTE-GRATTE ──────────────────────────────
+  function buildGratte(mg, time) {
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-md">Gratte la zone avec ta souris pour découvrir l'image !</p>
+      
+      <div style="position:relative; width:280px; height:280px; margin:0 auto; border-radius:12px; overflow:hidden;">
+        <img src="../assets/img/mg_character.png" style="position:absolute; width:100%; height:100%; object-fit:cover; z-index:1;">
+        <canvas id="gratte-canvas" width="280" height="280" style="position:absolute; top:0; left:0; z-index:2; cursor:crosshair; touch-action:none;"></canvas>
+      </div>
+    `;
+    gameArea.appendChild(card);
+    
+    const canvas = document.getElementById('gratte-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    ctx.fillStyle = '#666';
+    ctx.fillRect(0, 0, 280, 280);
+    ctx.font = '20px "Space Mono"';
+    ctx.fillStyle = '#aaa';
+    ctx.textAlign = 'center';
+    ctx.fillText('GRATTE-MOI', 140, 140);
+
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.lineWidth = 40;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    let isDrawing = false;
+    let checkInterval;
+
+    function getMousePos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function startDraw(e) {
+      if(!canAnswer) return;
+      isDrawing = true;
+      const pos = getMousePos(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+    
+    function draw(e) {
+      if(!isDrawing || !canAnswer) return;
+      e.preventDefault();
+      const pos = getMousePos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+    }
+    
+    function endDraw() { isDrawing = false; }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseleave', endDraw);
+    canvas.addEventListener('touchstart', startDraw, {passive:false});
+    canvas.addEventListener('touchmove', draw, {passive:false});
+    canvas.addEventListener('touchend', endDraw);
+
+    checkInterval = setInterval(() => {
+      if(!canAnswer) return clearInterval(checkInterval);
+      const data = ctx.getImageData(0,0,280,280).data;
+      let empty = 0;
+      for(let i=3; i<data.length; i+=4) if(data[i] === 0) empty++;
+      
+      if (empty / (280*280) > 0.6) {
+        clearInterval(checkInterval);
+        Sound.good();
+        canAnswer = false;
+        ctx.fillRect(0,0,280,280); // clear completely visually
+        onMiniGameEnd(mg.maxPts);
+      }
+    }, 250);
+  }
+
+  // ─── MINI-GAME: LA MISE AU POINT ─────────────────────────────
+  function buildFocus(mg, time) {
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-md">Règle la netteté de l'image au pixel près !</p>
+      
+      <div style="position:relative; width:100%; height:200px; margin-bottom:var(--space-md); border-radius:8px; overflow:hidden;">
+        <img id="focus-img" src="../assets/img/mg_landscape.png" style="width:100%; height:100%; object-fit:cover; filter:blur(20px);">
+      </div>
+      <input type="range" id="focus-slider" class="input w-full" min="0" max="100" value="0">
+      <button class="btn btn-primary w-full mt-sm" id="focus-btn">C'EST NET</button>
+    `;
+    gameArea.appendChild(card);
+    
+    const slider = document.getElementById('focus-slider');
+    const img = document.getElementById('focus-img');
+    const btn = document.getElementById('focus-btn');
+    
+    const target = Math.floor(Math.random() * 60 + 20);
+    
+    slider.addEventListener('input', () => {
+      const val = parseInt(slider.value);
+      const diff = Math.abs(val - target);
+      const blur = Math.min(20, diff * 0.4);
+      img.style.filter = `blur(${blur}px)`;
+    });
+    
+    btn.addEventListener('click', () => {
+      if(!canAnswer) return;
+      canAnswer = false;
+      const diff = Math.abs(parseInt(slider.value) - target);
+      if(diff <= 5) {
+        img.style.filter = 'none';
+        Sound.good();
+        onMiniGameEnd(mg.maxPts);
+      } else {
+        Sound.wrong();
+        onMiniGameEnd(0);
+      }
+    });
+  }
+
+  // ─── MINI-GAME: LE GLITCH ──────────────────────────────────
+  function buildGlitch(mg, time) {
+    const s2Init = Math.random()>0.5 ? 80 : -80;
+    const s3Init = Math.random()>0.5 ? 90 : -90;
+    const card = document.createElement('div');
+    card.className = 'mini-card';
+    card.innerHTML = `
+      <div class="mini-game-header">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-md">Répare l'image en alignant les bandes avec la souris !</p>
+      
+      <div style="position:relative; width:280px; height:280px; margin:0 auto; background:#111; overflow:hidden; border-radius:8px;">
+        <!-- Top static -->
+        <div style="position:absolute; top:0; left:0; width:100%; height:33.33%; background:url('../assets/img/mg_glitch.png'); background-size:280px 280px; background-position:0 0;"></div>
+        <!-- Middle draggable -->
+        <input type="range" id="glitch-2" class="glitch-slider" min="-100" max="100" value="${s2Init}" style="position:absolute; top:33.33%; left:0; width:100%; height:33.33%; opacity:0; z-index:10; cursor:ew-resize;">
+        <div id="glitch-2-vis" style="position:absolute; top:33.33%; left:${s2Init}px; width:100%; height:33.33%; background:url('../assets/img/mg_glitch.png'); background-size:280px 280px; background-position:0 -93.3px; pointer-events:none;"></div>
+        <!-- Bottom draggable -->
+        <input type="range" id="glitch-3" class="glitch-slider" min="-100" max="100" value="${s3Init}" style="position:absolute; top:66.66%; left:0; width:100%; height:33.33%; opacity:0; z-index:10; cursor:ew-resize;">
+        <div id="glitch-3-vis" style="position:absolute; top:66.66%; left:${s3Init}px; width:100%; height:33.33%; background:url('../assets/img/mg_glitch.png'); background-size:280px 280px; background-position:0 -186.6px; pointer-events:none;"></div>
+      </div>
+      
+      <button class="btn btn-primary w-full mt-md" id="glitch-btn">RÉPARÉ</button>
+    `;
+    gameArea.appendChild(card);
+    
+    const s2 = document.getElementById('glitch-2');
+    const v2 = document.getElementById('glitch-2-vis');
+    const s3 = document.getElementById('glitch-3');
+    const v3 = document.getElementById('glitch-3-vis');
+    
+    s2.addEventListener('input', () => v2.style.left = s2.value + 'px');
+    s3.addEventListener('input', () => v3.style.left = s3.value + 'px');
+    
+    document.getElementById('glitch-btn').addEventListener('click', () => {
+      if(!canAnswer) return;
+      canAnswer = false;
+      const diff = Math.abs(parseInt(s2.value)) + Math.abs(parseInt(s3.value));
+      if(diff <= 15) {
+        v2.style.left = '0px'; v3.style.left = '0px';
+        Sound.good();
+        onMiniGameEnd(mg.maxPts);
+      } else {
+        Sound.wrong();
+        onMiniGameEnd(0);
+      }
     });
   }
 
