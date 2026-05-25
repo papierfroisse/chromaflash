@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="view-transition" content="same-origin">
   <title>ChromaFlash — L'Enfer du Perfectionniste</title>
   <meta name="description" content="Testez votre perception et vos TOCs : Mega Mode WarioWare, Entraînement Chill et défis impossibles.">
   <link rel="stylesheet" href="css/design.css">
@@ -183,7 +184,7 @@
 
 <!-- MEGA MODE CTA -->
 <div class="mega-mode-container anim-scaleIn delay-1">
-  <a href="flash.html" class="mega-btn">
+  <a href="flash.html" class="mega-btn tilt-card">
     <div class="mega-icon">🔥</div>
     <div class="mega-title">MEGA MODE</div>
     <div class="mega-sub">Tous les jeux • Rapidité folle • 3 Vies</div>
@@ -196,52 +197,52 @@
   <p class="text-secondary mb-lg">Travaillez vos fixations à votre rythme. Pas de pression, juste de la perfection.</p>
   
   <div class="modes-grid">
-    <a href="daily.html" class="chill-card">
+    <a href="daily.html" class="chill-card tilt-card">
       <span class="chill-icon">📅</span>
       <span class="chill-name">Daily Challenge</span>
       <span class="chill-desc">La couleur du jour. 1 essai.</span>
     </a>
-    <a href="classic.html" class="chill-card">
+    <a href="classic.html" class="chill-card tilt-card">
       <span class="chill-icon">🎨</span>
       <span class="chill-name">Couleur Classic</span>
       <span class="chill-desc">Style GeoGuessr sur 5 rondes.</span>
     </a>
-    <a href="typo.html" class="chill-card">
+    <a href="typo.html" class="chill-card tilt-card">
       <span class="chill-icon">🔤</span>
       <span class="chill-name">Typo Rush</span>
       <span class="chill-desc">Anatomie de la lettre.</span>
     </a>
-    <a href="pixel.html" class="chill-card">
+    <a href="pixel.html" class="chill-card tilt-card">
       <span class="chill-icon">📐</span>
       <span class="chill-name">Pixel Perfect</span>
       <span class="chill-desc">Centre le carré parfaitement.</span>
     </a>
-    <a href="carreau.html" class="chill-card">
+    <a href="carreau.html" class="chill-card tilt-card">
       <span class="chill-icon">😤</span>
       <span class="chill-name">Le Carreau</span>
       <span class="chill-desc">Trouve l'anomalie dans la grille.</span>
     </a>
-    <a href="horloge.html" class="chill-card">
+    <a href="horloge.html" class="chill-card tilt-card">
       <span class="chill-icon">⏱️</span>
       <span class="chill-name">L'Horloge</span>
       <span class="chill-desc">Ajuste la trotteuse au millimètre.</span>
     </a>
-    <a href="volume.html" class="chill-card">
+    <a href="volume.html" class="chill-card tilt-card">
       <span class="chill-icon">📺</span>
       <span class="chill-name">Le Volume</span>
       <span class="chill-desc">Pair ou multiple de 5. Obligatoire.</span>
     </a>
-    <a href="cadre.html" class="chill-card">
+    <a href="cadre.html" class="chill-card tilt-card">
       <span class="chill-icon">🖼️</span>
       <span class="chill-name">Le Cadre</span>
       <span class="chill-desc">Redresse ce tableau à 0°.</span>
     </a>
-    <a href="survie.html" class="chill-card">
+    <a href="survie.html" class="chill-card tilt-card">
       <span class="chill-icon">💀</span>
       <span class="chill-name">Survie Couleur</span>
       <span class="chill-desc">Combien de temps tiendras-tu ?</span>
     </a>
-    <a href="expert.html" class="chill-card">
+    <a href="expert.html" class="chill-card tilt-card">
       <span class="chill-icon">🔬</span>
       <span class="chill-name">Expert</span>
       <span class="chill-desc">Aucune aide. Précision absolue.</span>
@@ -288,9 +289,16 @@
 </div>
 
 <script type="module">
-  import { getSettings, saveSettings, initSettingsPanel, Sound } from './js/ui.js';
+  import { initSettingsPanel, applySwatchBg, initTiltCards } from './js/ui.js';
 
+  // Apply saved background swatch on load
+  applySwatchBg(document.body);
+  
+  // Init Settings Modal
   initSettingsPanel();
+  
+  // Init 3D Tilt effect on cards
+  initTiltCards();
 
   document.getElementById('settings-close').addEventListener('click', () => {
     document.getElementById('settings-overlay').classList.remove('open');
