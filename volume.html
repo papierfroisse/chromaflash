@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChromaFlash — Le Volume de la TV 📺</title>
+  <link rel="stylesheet" href="css/design.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <style>
+    body { 
+      padding-top: 60px; 
+      min-height: 100dvh; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      background-color: var(--bg-void); 
+      transition: background-color 0.2s;
+    }
+    
+    .game-layout {
+      flex: 1;
+      width: 100%;
+      max-width: 600px;
+      padding: var(--space-xl) var(--space-md);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-lg);
+    }
+
+    /* WarioWare HUD */
+    .wario-hud {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+    .wario-lives { color: #F87171; letter-spacing: 2px; }
+    
+    /* The Volume Display */
+    .tv-container {
+      width: 100%;
+      max-width: 400px;
+      background: #111;
+      border: 12px solid #333;
+      border-radius: 16px;
+      padding: 40px 20px;
+      margin: var(--space-xl) 0;
+      position: relative;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+      text-align: center;
+    }
+
+    .volume-number {
+      font-family: 'Space Mono', monospace;
+      font-size: 6rem;
+      font-weight: 700;
+      color: #34D399; /* Green like an old TV OSD */
+      text-shadow: 0 0 20px rgba(52,211,153,0.6);
+      line-height: 1;
+      margin-bottom: 20px;
+    }
+
+    .volume-bar-container {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+    }
+
+    .volume-segment {
+      width: 8px;
+      height: 24px;
+      background: #333;
+    }
+    .volume-segment.active {
+      background: #34D399;
+      box-shadow: 0 0 8px rgba(52,211,153,0.4);
+    }
+
+    /* Result modal */
+    .result-overlay {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-xl) var(--space-lg);
+      text-align: center;
+    }
+    .result-overlay.show { display: flex; animation: fadeUp 0.4s var(--ease-out) both; }
+  </style>
+</head>
+<body>
+
+<header class="game-header" style="width:100%; max-width:600px">
+  <a href="index.html" class="back-btn">← Abandonner</a>
+  <div class="text-xs text-muted">📺 Le Volume de la TV</div>
+</header>
+
+<div class="game-layout" id="game-layout">
+  
+  <div class="wario-hud anim-fadeDown">
+    <div>SCORE: <span id="hud-score">0</span></div>
+    <div>Ronde <span id="hud-round">1</span></div>
+    <div class="wario-lives" id="hud-lives">❤️❤️❤️</div>
+  </div>
+
+  <div class="text-center w-full" id="game-area" style="display:none">
+    <div class="text-secondary mb-sm">Arrête le volume sur un <strong>nombre pair</strong> ou <strong>multiple de 5</strong> !</div>
+    <div class="text-xs text-muted mb-lg">(Pas de nombres impairs, c'est insupportable !)</div>
+    
+    <div class="tv-container anim-scaleIn">
+      <div class="volume-number" id="vol-num">0</div>
+      <div class="volume-bar-container" id="vol-bar">
+        <!-- 20 segments generated in JS -->
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-lg w-full" id="btn-validate">
+      STOP !
+    </button>
+  </div>
+
+  <div class="text-center mt-xl anim-fadeUp" id="start-screen">
+    <h2 class="text-2xl weight-700 mb-md">Le Volume de la TV</h2>
+    <p class="text-secondary mb-lg">Le volume monte tout seul et très vite.<br>Arrête-le sur un nombre <strong>pair</strong> ou un <strong>multiple de 5</strong>.<br>Quoi qu'il arrive, n'utilise JAMAIS un nombre comme 17 ou 23 !</p>
+    <button class="btn btn-primary btn-lg w-full" id="btn-start">C'EST PARTI</button>
+  </div>
+
+</div>
+
+<!-- FINAL -->
+<div id="final-layout" class="result-overlay" style="margin-top: 60px;">
+  <div class="card text-center" style="max-width: 400px; width:100%;">
+    <div class="text-4xl mb-sm" id="fin-emoji">📺</div>
+    <div class="text-2xl weight-700 mb-lg text-danger" id="fin-title">TROP TARD !</div>
+    <div class="text-sm text-muted mb-sm">Score final</div>
+    <div class="score-display mb-xl" id="fin-score">0</div>
+    <div class="text-sm mb-lg">Tu as survécu jusqu'à la ronde <span id="fin-round" class="weight-700"></span>.</div>
+    <button class="btn btn-primary btn-lg w-full mb-md" onclick="location.reload()">Réessayer</button>
+    <a href="index.html" class="btn btn-ghost w-full">Retour au menu</a>
+  </div>
+</div>
+
+<script type="module">
+  import { WarioEngine } from './js/frustration.js';
+  import { Sound, animateCounter, triggerScreenShake, triggerScreenFlash } from './js/ui.js';
+
+  const gameArea = document.getElementById('game-area');
+  const startScreen = document.getElementById('start-screen');
+  
+  const scoreEl = document.getElementById('hud-score');
+  const roundEl = document.getElementById('hud-round');
+  const livesEl = document.getElementById('hud-lives');
+
+  const volNum = document.getElementById('vol-num');
+  const volBar = document.getElementById('vol-bar');
+  const btnValidate = document.getElementById('btn-validate');
+
+  let engine;
+  let currentVolume = 0;
+  let isWaiting = false;
+  let volumeInterval;
+  let speed = 100; // ms per volume tick
+
+  // Build the bar
+  for(let i=0; i<20; i++) {
+    const d = document.createElement('div');
+    d.className = 'volume-segment';
+    volBar.appendChild(d);
+  }
+
+  function initGame() {
+    startScreen.style.display = 'none';
+    gameArea.style.display = 'block';
+
+    engine = new WarioEngine(
+      (round, time) => startRound(round),
+      () => {}, 
+      (score, round) => showFinal(score, round)
+    );
+
+    engine.startNextRound();
+  }
+
+  document.getElementById('btn-start').addEventListener('click', () => {
+    Sound.click();
+    initGame();
+  });
+
+  function startRound(round) {
+    isWaiting = false;
+    currentVolume = Math.floor(Math.random() * 50); // Start somewhere random
+    updateDisplay();
+    
+    // As rounds progress, volume moves faster
+    speed = Math.max(30, 150 - (round * 8));
+    
+    clearInterval(volumeInterval);
+    volumeInterval = setInterval(() => {
+      currentVolume++;
+      if(currentVolume > 100) currentVolume = 0;
+      updateDisplay();
+      Sound.tick();
+    }, speed);
+
+    // Update HUD
+    scoreEl.textContent = engine.score;
+    roundEl.textContent = round;
+    livesEl.textContent = '❤️'.repeat(engine.lives);
+  }
+
+  function updateDisplay() {
+    volNum.textContent = currentVolume;
+    const segments = volBar.children;
+    const activeCount = Math.ceil(currentVolume / 5);
+    for(let i=0; i<segments.length; i++) {
+      if(i < activeCount) segments[i].classList.add('active');
+      else segments[i].classList.remove('active');
+    }
+  }
+
+  btnValidate.addEventListener('click', () => {
+    validate();
+  });
+
+  // Spacebar to stop
+  document.addEventListener('keydown', (e) => {
+    if ((e.key === ' ' || e.key === 'Enter') && !isWaiting && gameArea.style.display === 'block') {
+      e.preventDefault();
+      validate();
+    }
+  });
+
+  function validate() {
+    if (isWaiting) return;
+    isWaiting = true;
+    clearInterval(volumeInterval);
+
+    // Pair ou multiple de 5
+    const isPair = currentVolume % 2 === 0;
+    const isMult5 = currentVolume % 5 === 0;
+    
+    if (isPair || isMult5) {
+      Sound.good();
+      triggerScreenFlash();
+      engine.winRound();
+    } else {
+      Sound.wrong();
+      triggerScreenShake();
+      engine.failRound(false);
+    }
+  }
+
+  function showFinal(score, round) {
+    document.getElementById('game-layout').style.display = 'none';
+    const finalLayout = document.getElementById('final-layout');
+    finalLayout.classList.add('show');
+    
+    document.getElementById('fin-round').textContent = round;
+    animateCounter(document.getElementById('fin-score'), 0, score, 1000);
+    Sound.bad();
+  }
+
+</script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChromaFlash — Le Cadre de Travers 🖼️</title>
+  <link rel="stylesheet" href="css/design.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <style>
+    body { 
+      padding-top: 60px; 
+      min-height: 100dvh; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      background-color: var(--bg-void); 
+      transition: background-color 0.2s;
+    }
+    
+    .game-layout {
+      flex: 1;
+      width: 100%;
+      max-width: 600px;
+      padding: var(--space-xl) var(--space-md);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-lg);
+    }
+
+    /* WarioWare HUD */
+    .wario-hud {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+    .wario-lives { color: #F87171; letter-spacing: 2px; }
+    
+    /* The Picture Frame */
+    .wall-container {
+      width: 100%;
+      height: 350px;
+      background: repeating-linear-gradient(
+        0deg,
+        #1E1E28,
+        #1E1E28 20px,
+        #2A2A35 20px,
+        #2A2A35 22px
+      );
+      border-radius: 16px;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: inset 0 10px 40px rgba(0,0,0,0.5);
+      margin: var(--space-xl) 0;
+      overflow: hidden;
+    }
+
+    .frame {
+      width: 200px;
+      height: 250px;
+      background: #E5E7EB;
+      border: 12px solid #8B5A2B;
+      border-radius: 4px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5), 10px 10px 0px rgba(0,0,0,0.2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.05s linear;
+      position: relative;
+    }
+
+    /* The picture inside */
+    .picture {
+      width: 80%;
+      height: 80%;
+      background: linear-gradient(135deg, #60A5FA, #A78BFA);
+      border-radius: 2px;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 3rem;
+    }
+
+    /* Target guide (hidden by default) */
+    .level-guide {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: #34D399;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Result modal */
+    .result-overlay {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-xl) var(--space-lg);
+      text-align: center;
+    }
+    .result-overlay.show { display: flex; animation: fadeUp 0.4s var(--ease-out) both; }
+  </style>
+</head>
+<body>
+
+<header class="game-header" style="width:100%; max-width:600px">
+  <a href="index.html" class="back-btn">← Abandonner</a>
+  <div class="text-xs text-muted">🖼️ Le Cadre de Travers</div>
+</header>
+
+<div class="game-layout" id="game-layout">
+  
+  <div class="wario-hud anim-fadeDown">
+    <div>SCORE: <span id="hud-score">0</span></div>
+    <div>Ronde <span id="hud-round">1</span></div>
+    <div class="wario-lives" id="hud-lives">❤️❤️❤️</div>
+  </div>
+
+  <div class="text-center w-full" id="game-area" style="display:none">
+    <div class="text-secondary mb-sm">Redresse ce cadre parfaitement !</div>
+    <div class="text-xs text-muted mb-lg">(Flèches ← / → du clavier, ou tapote les côtés)</div>
+    
+    <div class="wall-container anim-scaleIn">
+      <div class="level-guide" id="level-guide"></div>
+      <div class="frame" id="frame">
+        <div class="picture">🏔️</div>
+      </div>
+      
+      <!-- Touch zones for mobile -->
+      <div id="touch-left" style="position:absolute; top:0; left:0; width:50%; height:100%; z-index:10"></div>
+      <div id="touch-right" style="position:absolute; top:0; right:0; width:50%; height:100%; z-index:10"></div>
+    </div>
+
+    <button class="btn btn-primary btn-lg w-full" id="btn-validate">
+      C'EST DROIT !
+    </button>
+  </div>
+
+  <div class="text-center mt-xl anim-fadeUp" id="start-screen">
+    <h2 class="text-2xl weight-700 mb-md">Le Cadre de Travers</h2>
+    <p class="text-secondary mb-lg">Ce tableau est accroché de travers, c'est insupportable.<br>Redresse-le au millimètre près avant la fin du temps !</p>
+    <button class="btn btn-primary btn-lg w-full" id="btn-start">C'EST PARTI</button>
+  </div>
+
+</div>
+
+<!-- FINAL -->
+<div id="final-layout" class="result-overlay" style="margin-top: 60px;">
+  <div class="card text-center" style="max-width: 400px; width:100%;">
+    <div class="text-4xl mb-sm" id="fin-emoji">🖼️</div>
+    <div class="text-2xl weight-700 mb-lg text-danger" id="fin-title">TROP TARD !</div>
+    <div class="text-sm text-muted mb-sm">Score final</div>
+    <div class="score-display mb-xl" id="fin-score">0</div>
+    <div class="text-sm mb-lg">Tu as survécu jusqu'à la ronde <span id="fin-round" class="weight-700"></span>.</div>
+    <button class="btn btn-primary btn-lg w-full mb-md" onclick="location.reload()">Réessayer</button>
+    <a href="index.html" class="btn btn-ghost w-full">Retour au menu</a>
+  </div>
+</div>
+
+<script type="module">
+  import { WarioEngine } from './js/frustration.js';
+  import { Sound, animateCounter, triggerScreenShake, triggerScreenFlash } from './js/ui.js';
+
+  const gameArea = document.getElementById('game-area');
+  const startScreen = document.getElementById('start-screen');
+  
+  const scoreEl = document.getElementById('hud-score');
+  const roundEl = document.getElementById('hud-round');
+  const livesEl = document.getElementById('hud-lives');
+
+  const frame = document.getElementById('frame');
+  const levelGuide = document.getElementById('level-guide');
+  const btnValidate = document.getElementById('btn-validate');
+
+  let engine;
+  let currentAngle = 0;
+  let isWaiting = false;
+  let tolerance = 1; // Margin of error in degrees
+  let step = 0.5;    // Rotation step in degrees
+
+  function initGame() {
+    startScreen.style.display = 'none';
+    gameArea.style.display = 'block';
+
+    engine = new WarioEngine(
+      (round, time) => startRound(round),
+      () => {},
+      (score, round) => showFinal(score, round)
+    );
+
+    engine.startNextRound();
+  }
+
+  document.getElementById('btn-start').addEventListener('click', () => {
+    Sound.click();
+    initGame();
+  });
+
+  function startRound(round) {
+    isWaiting = false;
+    
+    // Tolerance gets stricter
+    tolerance = Math.max(0.2, 1.5 - (round * 0.1));
+    step = Math.max(0.1, 1 - (round * 0.05));
+    
+    // Random angle between -15 and 15 degrees (but not too close to 0)
+    let angle = 0;
+    while(Math.abs(angle) < 4) {
+      angle = (Math.random() - 0.5) * 30;
+    }
+    currentAngle = angle;
+
+    levelGuide.style.opacity = '0';
+    updateFrame();
+
+    // Update HUD
+    scoreEl.textContent = engine.score;
+    roundEl.textContent = round;
+    livesEl.textContent = '❤️'.repeat(engine.lives);
+  }
+
+  function updateFrame() {
+    frame.style.transform = `rotate(${currentAngle}deg)`;
+  }
+
+  // --- CONTROLS ---
+  function rotateLeft() {
+    if (isWaiting) return;
+    currentAngle -= step;
+    updateFrame();
+  }
+  
+  function rotateRight() {
+    if (isWaiting) return;
+    currentAngle += step;
+    updateFrame();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (gameArea.style.display === 'none') return;
+    if (e.key === 'ArrowLeft') { e.preventDefault(); rotateLeft(); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); rotateRight(); }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); validate(); }
+  });
+
+  document.getElementById('touch-left').addEventListener('touchstart', (e) => { e.preventDefault(); rotateLeft(); });
+  document.getElementById('touch-left').addEventListener('mousedown', (e) => { e.preventDefault(); rotateLeft(); });
+  
+  document.getElementById('touch-right').addEventListener('touchstart', (e) => { e.preventDefault(); rotateRight(); });
+  document.getElementById('touch-right').addEventListener('mousedown', (e) => { e.preventDefault(); rotateRight(); });
+
+  btnValidate.addEventListener('click', () => {
+    validate();
+  });
+
+  function validate() {
+    if (isWaiting) return;
+    isWaiting = true;
+
+    levelGuide.style.opacity = '1';
+
+    let diff = Math.abs(currentAngle);
+
+    if (diff <= tolerance) {
+      Sound.good();
+      triggerScreenFlash();
+      engine.winRound();
+    } else {
+      Sound.wrong();
+      triggerScreenShake();
+      engine.failRound(false);
+    }
+  }
+
+  function showFinal(score, round) {
+    document.getElementById('game-layout').style.display = 'none';
+    const finalLayout = document.getElementById('final-layout');
+    finalLayout.classList.add('show');
+    
+    document.getElementById('fin-round').textContent = round;
+    animateCounter(document.getElementById('fin-score'), 0, score, 1000);
+    Sound.bad();
+  }
+
+</script>
+</body>
+</html>

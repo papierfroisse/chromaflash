@@ -253,7 +253,8 @@
   import { getDistance, computePixelScore } from './js/composition.js';
   import {
     getSettings, getSwatchBgColor, Sound, animateCounter,
-    showToast, launchConfetti, playSoundForScore, copyScore
+    showToast, launchConfetti, playSoundForScore, copyScore,
+    triggerScreenShake, triggerScreenFlash
   } from './js/ui.js';
   import { getGlobalStats } from './js/score.js';
 
@@ -273,6 +274,8 @@
     { id:'pixel',      name:'PIXEL PERFECT', icon:'📐',  maxPts: 1000, time: 8 },
     { id:'carreau',    name:'LE CARREAU',    icon:'😤',  maxPts: 1000, time: 5 },
     { id:'horloge',    name:'L\'HORLOGE',    icon:'⏱️',  maxPts: 1000, time: 6 },
+    { id:'volume',     name:'LE VOLUME',     icon:'📺',  maxPts: 1000, time: 5 },
+    { id:'cadre',      name:'LE CADRE',      icon:'🖼️',  maxPts: 1000, time: 6 },
   ];
 
   // Pre-load Typo Fonts
@@ -355,6 +358,8 @@
       pixel:      buildPixel,
       carreau:    buildCarreau,
       horloge:    buildHorloge,
+      volume:     buildVolume,
+      cadre:      buildCadre,
     };
     builders[mg.id](mg, time);
 
@@ -1186,6 +1191,184 @@
     const text = `⚡ ChromaFlash — Mode Flash\nRANG ${rank} — ${totalPts} / ${max} pts\n\nTeste ta perception colorimétrique !`;
     copyScore(text);
   });
+
+  // ─── MINI-GAME: LE VOLUME ────────────────────────────────────
+  function buildVolume(mg, time) {
+    const card = document.createElement('div');
+    card.className = 'mini-card w-full';
+    card.style.display = 'flex';
+    card.style.flexDirection = 'column';
+    card.style.alignItems = 'center';
+    card.innerHTML = `
+      <div class="mini-game-header w-full">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-sm">Arrête sur un <strong>nombre pair</strong> ou <strong>multiple de 5</strong> !</p>
+      
+      <div style="background:#111; border:8px solid #333; border-radius:12px; padding:20px; text-align:center; margin:20px 0; width:100%; max-width:300px;">
+        <div id="flash-vol-num" style="font-family:'Space Mono',monospace; font-size:4rem; font-weight:700; color:#34D399; text-shadow:0 0 10px rgba(52,211,153,0.5); line-height:1; margin-bottom:10px">0</div>
+        <div id="flash-vol-bar" style="display:flex; gap:4px; justify-content:center;"></div>
+      </div>
+      
+      <button class="btn btn-primary btn-lg w-full mt-md" id="flash-vol-btn">STOP !</button>
+    `;
+    gameArea.appendChild(card);
+
+    const volNum = document.getElementById('flash-vol-num');
+    const volBar = document.getElementById('flash-vol-bar');
+    const btnStop = document.getElementById('flash-vol-btn');
+
+    for(let i=0; i<20; i++) {
+      const d = document.createElement('div');
+      d.style.width = '6px'; d.style.height = '16px'; d.style.background = '#333';
+      volBar.appendChild(d);
+    }
+
+    let currentVolume = Math.floor(Math.random() * 50);
+    const speed = Math.max(30, 150 - (mgIndex * 8));
+
+    function updateDisplay() {
+      volNum.textContent = currentVolume;
+      const segments = volBar.children;
+      const activeCount = Math.ceil(currentVolume / 5);
+      for(let i=0; i<segments.length; i++) {
+        segments[i].style.background = (i < activeCount) ? '#34D399' : '#333';
+        segments[i].style.boxShadow = (i < activeCount) ? '0 0 5px rgba(52,211,153,0.5)' : 'none';
+      }
+    }
+
+    const volInterval = setInterval(() => {
+      currentVolume++;
+      if(currentVolume > 100) currentVolume = 0;
+      updateDisplay();
+      Sound.tick();
+    }, speed);
+
+    function handleStop() {
+      if (!canAnswer) return;
+      canAnswer = false;
+      clearInterval(volInterval);
+      
+      const isPair = currentVolume % 2 === 0;
+      const isMult5 = currentVolume % 5 === 0;
+      
+      if (isPair || isMult5) {
+        triggerScreenFlash();
+        Sound.good();
+        onMiniGameEnd(mg.maxPts);
+      } else {
+        triggerScreenShake();
+        Sound.wrong();
+        onMiniGameEnd(0);
+      }
+    }
+
+    btnStop.addEventListener('click', handleStop);
+
+    // Temp event listener for spacebar
+    const keyHandler = (e) => {
+      if ((e.key === ' ' || e.key === 'Enter') && canAnswer) {
+        e.preventDefault();
+        handleStop();
+      }
+    };
+    document.addEventListener('keydown', keyHandler);
+    
+    // We need to clean up the event listener when minigame ends.
+    // The easiest way is to wrap onMiniGameEnd.
+    const originalEnd = onMiniGameEnd;
+    // Actually we can't override local function easily, we just rely on canAnswer flag.
+    // However, the listener will stack up if we don't remove it.
+    setTimeout(() => { document.removeEventListener('keydown', keyHandler); }, time * 1000 + 1000);
+  }
+
+  // ─── MINI-GAME: LE CADRE ──────────────────────────────────────
+  function buildCadre(mg, time) {
+    const card = document.createElement('div');
+    card.className = 'mini-card w-full';
+    card.style.display = 'flex';
+    card.style.flexDirection = 'column';
+    card.style.alignItems = 'center';
+    card.innerHTML = `
+      <div class="mini-game-header w-full">
+        <div>
+          <div class="mini-game-number">Mini-jeu ${mgIndex+1} / ${MINI_GAMES.length}</div>
+          <div class="mini-game-title">${mg.icon} ${mg.name}</div>
+        </div>
+      </div>
+      <p class="text-sm text-secondary mb-sm">Redresse ce cadre parfaitement à 0° !</p>
+      
+      <div style="width:100%; height:250px; background:repeating-linear-gradient(0deg,#1E1E28,#1E1E28 10px,#2A2A35 10px,#2A2A35 12px); border-radius:12px; position:relative; display:flex; justify-content:center; align-items:center; overflow:hidden; margin:20px 0;">
+        <div id="flash-level-guide" style="position:absolute; width:100%; height:2px; background:#34D399; opacity:0; z-index:10; pointer-events:none;"></div>
+        
+        <div id="flash-cadre" style="width:140px; height:180px; background:#E5E7EB; border:8px solid #8B5A2B; display:flex; justify-content:center; align-items:center; transition:transform 0.05s linear; position:relative;">
+          <div style="width:80%; height:80%; background:linear-gradient(135deg,#60A5FA,#A78BFA); display:flex; justify-content:center; align-items:center; font-size:2rem;">🏔️</div>
+        </div>
+        
+        <div id="flash-cadre-left" style="position:absolute; top:0; left:0; width:50%; height:100%; z-index:10; cursor:pointer;"></div>
+        <div id="flash-cadre-right" style="position:absolute; top:0; right:0; width:50%; height:100%; z-index:10; cursor:pointer;"></div>
+      </div>
+      
+      <button class="btn btn-primary btn-lg w-full mt-md" id="flash-cadre-btn">C'EST DROIT !</button>
+    `;
+    gameArea.appendChild(card);
+
+    const frame = document.getElementById('flash-cadre');
+    const guide = document.getElementById('flash-level-guide');
+    const btnVal = document.getElementById('flash-cadre-btn');
+    const leftZone = document.getElementById('flash-cadre-left');
+    const rightZone = document.getElementById('flash-cadre-right');
+
+    const tolerance = Math.max(0.5, 2 - (mgIndex * 0.1));
+    const step = Math.max(0.2, 1.5 - (mgIndex * 0.05));
+    
+    let angle = 0;
+    while(Math.abs(angle) < 5) { angle = (Math.random() - 0.5) * 40; }
+
+    function updateFrame() {
+      frame.style.transform = `rotate(${angle}deg)`;
+    }
+    updateFrame();
+
+    function rotateL() { if(canAnswer) { angle -= step; updateFrame(); } }
+    function rotateR() { if(canAnswer) { angle += step; updateFrame(); } }
+
+    leftZone.addEventListener('mousedown', (e) => { e.preventDefault(); rotateL(); });
+    leftZone.addEventListener('touchstart', (e) => { e.preventDefault(); rotateL(); });
+    rightZone.addEventListener('mousedown', (e) => { e.preventDefault(); rotateR(); });
+    rightZone.addEventListener('touchstart', (e) => { e.preventDefault(); rotateR(); });
+
+    const keyHandler = (e) => {
+      if (!canAnswer) return;
+      if (e.key === 'ArrowLeft') { e.preventDefault(); rotateL(); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); rotateR(); }
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); validate(); }
+    };
+    document.addEventListener('keydown', keyHandler);
+
+    function validate() {
+      if (!canAnswer) return;
+      canAnswer = false;
+      guide.style.opacity = '1';
+      
+      if (Math.abs(angle) <= tolerance) {
+        triggerScreenFlash();
+        Sound.good();
+        onMiniGameEnd(mg.maxPts);
+      } else {
+        triggerScreenShake();
+        Sound.wrong();
+        onMiniGameEnd(0);
+      }
+    }
+
+    btnVal.addEventListener('click', validate);
+
+    setTimeout(() => { document.removeEventListener('keydown', keyHandler); }, time * 1000 + 1000);
+  }
 
   // ─── START ────────────────────────────────────────────────────
   startGame();
