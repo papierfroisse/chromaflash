@@ -258,7 +258,9 @@
     triggerScreenShake, triggerScreenFlash
   } from '../assets/js/ui.js';
   import { getGlobalStats } from '../assets/js/score.js';
+  import { initFirebase, saveScore } from '../assets/js/firebase.js';
 
+  initFirebase();
   const settings = getSettings();
 
   // ─── MINI GAME DEFINITIONS ────────────────────────────────────
@@ -1174,6 +1176,9 @@
         data.records.flash = { best: totalPts, rank, date: new Date().toISOString() };
       }
       localStorage.setItem('chromaflash_data', JSON.stringify(data));
+      
+      // Save to Firebase (if logged in)
+      saveScore('mega', totalPts);
     } catch {}
 
     Sound.levelUp();
