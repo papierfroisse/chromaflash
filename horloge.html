@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChromaFlash — L'Horloge Mal Réglée ⏱️</title>
+  <link rel="stylesheet" href="css/design.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <style>
+    body { 
+      padding-top: 60px; 
+      min-height: 100dvh; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      background-color: var(--bg-void); 
+      transition: background-color 0.2s;
+    }
+    
+    .game-layout {
+      flex: 1;
+      width: 100%;
+      max-width: 600px;
+      padding: var(--space-xl) var(--space-md);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-lg);
+    }
+
+    /* WarioWare HUD */
+    .wario-hud {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+    .wario-lives { color: #F87171; letter-spacing: 2px; }
+    
+    /* The Clock */
+    .clock-container {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      background: var(--bg-card);
+      border: 4px solid var(--bg-border);
+      border-radius: 50%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 4px 10px rgba(0,0,0,0.1);
+      margin: var(--space-2xl) 0;
+    }
+
+    /* Clock markers (12, 3, 6, 9) */
+    .clock-marker {
+      position: absolute;
+      background: var(--text-muted);
+      border-radius: 999px;
+    }
+    .marker-12, .marker-6 { width: 4px; height: 20px; left: calc(50% - 2px); }
+    .marker-3, .marker-9 { width: 20px; height: 4px; top: calc(50% - 2px); }
+    
+    .marker-12 { top: 10px; }
+    .marker-6 { bottom: 10px; }
+    .marker-3 { right: 10px; }
+    .marker-9 { left: 10px; }
+
+    /* The Hand */
+    .clock-hand-wrap {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0; left: 0;
+      /* Rotate this wrapper to rotate the hand from the center */
+      transition: transform 0.05s linear;
+      transform-origin: center center;
+    }
+    .clock-hand {
+      position: absolute;
+      bottom: 50%;
+      left: calc(50% - 3px);
+      width: 6px;
+      height: 110px;
+      background: #F87171;
+      border-radius: 999px 999px 0 0;
+      transform-origin: bottom center;
+    }
+    .clock-center-dot {
+      position: absolute;
+      top: calc(50% - 8px);
+      left: calc(50% - 8px);
+      width: 16px;
+      height: 16px;
+      background: #FFF;
+      border-radius: 50%;
+      border: 4px solid #F87171;
+    }
+
+    /* Target guide (optional, hidden by default but shown briefly on win/loss) */
+    .target-guide {
+      position: absolute;
+      bottom: 50%;
+      left: calc(50% - 1px);
+      width: 2px;
+      height: 120px;
+      background: #34D399;
+      transform-origin: bottom center;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Result modal */
+    .result-overlay {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-xl) var(--space-lg);
+      text-align: center;
+    }
+    .result-overlay.show { display: flex; animation: fadeUp 0.4s var(--ease-out) both; }
+  </style>
+</head>
+<body>
+
+<header class="game-header" style="width:100%; max-width:600px">
+  <a href="index.html" class="back-btn">← Abandonner</a>
+  <div class="text-xs text-muted">😤 L'Horloge Mal Réglée</div>
+</header>
+
+<div class="game-layout" id="game-layout">
+  
+  <div class="wario-hud anim-fadeDown">
+    <div>SCORE: <span id="hud-score">0</span></div>
+    <div>Ronde <span id="hud-round">1</span></div>
+    <div class="wario-lives" id="hud-lives">❤️❤️❤️</div>
+  </div>
+
+  <div class="text-center w-full" id="game-area" style="display:none">
+    <div class="text-secondary mb-sm">Ajuste l'aiguille pour qu'elle soit parfaitement alignée !</div>
+    <div class="text-xs text-muted mb-lg">(Flèches ← / → du clavier, ou tapote les côtés de l'horloge)</div>
+    
+    <div class="clock-container anim-scaleIn" id="clock-container">
+      <div class="clock-marker marker-12"></div>
+      <div class="clock-marker marker-3"></div>
+      <div class="clock-marker marker-6"></div>
+      <div class="clock-marker marker-9"></div>
+
+      <div class="target-guide" id="target-guide"></div>
+
+      <div class="clock-hand-wrap" id="hand-wrap">
+        <div class="clock-hand"></div>
+      </div>
+      <div class="clock-center-dot"></div>
+
+      <!-- Touch zones for mobile -->
+      <div id="touch-left" style="position:absolute; top:0; left:0; width:50%; height:100%; z-index:10"></div>
+      <div id="touch-right" style="position:absolute; top:0; right:0; width:50%; height:100%; z-index:10"></div>
+    </div>
+
+    <button class="btn btn-primary btn-lg w-full" id="btn-validate">
+      C'EST PARFAIT !
+    </button>
+  </div>
+
+  <div class="text-center mt-xl anim-fadeUp" id="start-screen">
+    <h2 class="text-2xl weight-700 mb-md">L'Horloge Mal Réglée</h2>
+    <p class="text-secondary mb-lg">L'aiguille est très légèrement décalée.<br>Utilise les flèches du clavier pour l'aligner parfaitement sur une heure pile avant la fin du temps !</p>
+    <button class="btn btn-primary btn-lg w-full" id="btn-start">C'EST PARTI</button>
+  </div>
+
+</div>
+
+<!-- FINAL -->
+<div id="final-layout" class="result-overlay" style="margin-top: 60px;">
+  <div class="card text-center" style="max-width: 400px; width:100%;">
+    <div class="text-4xl mb-sm" id="fin-emoji">⏰</div>
+    <div class="text-2xl weight-700 mb-lg text-danger" id="fin-title">TROP TARD !</div>
+    <div class="text-sm text-muted mb-sm">Score final</div>
+    <div class="score-display mb-xl" id="fin-score">0</div>
+    <div class="text-sm mb-lg">Tu as survécu jusqu'à la ronde <span id="fin-round" class="weight-700"></span>.</div>
+    <button class="btn btn-primary btn-lg w-full mb-md" onclick="location.reload()">Réessayer</button>
+    <a href="index.html" class="btn btn-ghost w-full">Retour au menu</a>
+  </div>
+</div>
+
+<script type="module">
+  import { WarioEngine } from './js/frustration.js';
+  import { Sound, animateCounter, launchConfetti } from './js/ui.js';
+
+  const gameArea = document.getElementById('game-area');
+  const startScreen = document.getElementById('start-screen');
+  
+  const scoreEl = document.getElementById('hud-score');
+  const roundEl = document.getElementById('hud-round');
+  const livesEl = document.getElementById('hud-lives');
+
+  const handWrap = document.getElementById('hand-wrap');
+  const targetGuide = document.getElementById('target-guide');
+  const btnValidate = document.getElementById('btn-validate');
+
+  let engine;
+  
+  // Game variables
+  let currentAngle = 0;
+  let targetAngle = 0;
+  let isWaiting = false;
+  let tolerance = 1; // Margin of error in degrees
+  let step = 0.5;    // Rotation step in degrees
+
+  function initGame() {
+    startScreen.style.display = 'none';
+    gameArea.style.display = 'block';
+
+    engine = new WarioEngine(
+      (round, time) => startRound(round), // Start
+      () => {},  // End handled inside validate
+      (score, round) => showFinal(score, round) // GameOver
+    );
+
+    engine.startNextRound();
+  }
+
+  document.getElementById('btn-start').addEventListener('click', () => {
+    Sound.click();
+    initGame();
+  });
+
+  function startRound(round) {
+    isWaiting = false;
+    
+    // As rounds progress, tolerance gets stricter and step gets finer
+    tolerance = Math.max(0.2, 1.5 - (round * 0.1));
+    step = Math.max(0.1, 1 - (round * 0.05));
+    
+    // Choose a random cardinal direction for the target
+    const bases = [0, 90, 180, 270];
+    targetAngle = bases[Math.floor(Math.random() * bases.length)];
+    
+    // Add a small initial error (e.g., between 2 and 5 degrees)
+    const errorMagnitude = 2 + Math.random() * 3;
+    const direction = Math.random() > 0.5 ? 1 : -1;
+    currentAngle = targetAngle + (errorMagnitude * direction);
+
+    targetGuide.style.opacity = '0';
+    targetGuide.style.transform = `rotate(${targetAngle}deg)`;
+    updateHand();
+
+    // Update HUD
+    scoreEl.textContent = engine.score;
+    roundEl.textContent = round;
+    livesEl.textContent = '❤️'.repeat(engine.lives);
+  }
+
+  function updateHand() {
+    handWrap.style.transform = `rotate(${currentAngle}deg)`;
+  }
+
+  // --- CONTROLS ---
+  function rotateLeft() {
+    if (isWaiting) return;
+    currentAngle -= step;
+    updateHand();
+  }
+  
+  function rotateRight() {
+    if (isWaiting) return;
+    currentAngle += step;
+    updateHand();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') { e.preventDefault(); rotateLeft(); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); rotateRight(); }
+    // Validation rapide avec Entrée ou Espace
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); validate(); }
+  });
+
+  document.getElementById('touch-left').addEventListener('touchstart', (e) => { e.preventDefault(); rotateLeft(); });
+  document.getElementById('touch-left').addEventListener('mousedown', (e) => { e.preventDefault(); rotateLeft(); });
+  
+  document.getElementById('touch-right').addEventListener('touchstart', (e) => { e.preventDefault(); rotateRight(); });
+  document.getElementById('touch-right').addEventListener('mousedown', (e) => { e.preventDefault(); rotateRight(); });
+
+  btnValidate.addEventListener('click', () => {
+    validate();
+  });
+
+  function validate() {
+    if (isWaiting) return;
+    isWaiting = true;
+
+    // Show the target guide temporarily
+    targetGuide.style.opacity = '1';
+
+    // Normalize angles (handle wrapping around 360/0)
+    let diff = Math.abs((currentAngle % 360) - (targetAngle % 360));
+    if (diff > 180) diff = 360 - diff; // shortest path
+
+    if (diff <= tolerance) {
+      Sound.good();
+      engine.winRound();
+    } else {
+      Sound.wrong();
+      engine.failRound(false); // not a timeout
+    }
+  }
+
+  function showFinal(score, round) {
+    document.getElementById('game-layout').style.display = 'none';
+    const finalLayout = document.getElementById('final-layout');
+    finalLayout.classList.add('show');
+    
+    document.getElementById('fin-round').textContent = round;
+    animateCounter(document.getElementById('fin-score'), 0, score, 1000);
+    Sound.bad();
+  }
+
+</script>
+</body>
+</html>
