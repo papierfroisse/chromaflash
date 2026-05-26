@@ -2355,7 +2355,7 @@
     });
   }
 
-  // ─── MINI-GAME: SUPER MARIO 3 (1-1) ─────────────────────────
+  // ─── MINI-GAME: SUPER MARIO 3 (1-1) CANVAS EDITION ──────────────
   function buildMario(mg, time) {
     const card = document.createElement('div');
     card.className = 'mini-card w-full';
@@ -2367,83 +2367,55 @@
       </div>
       <p class="text-sm text-secondary mb-md">Esquive les goombas et saute par-dessus le tuyau ! (Espace)</p>
       
-      <div style="position:relative; width:100%; height:220px; overflow:hidden; background:#5C94FC; border-radius:8px; border:4px solid #000; margin-bottom:var(--space-md);">
-        <!-- Background Decor -->
-        <div style="position:absolute; bottom:40px; left:20px; width:60px; height:30px; background:#F8D8A0; border-radius:30px 30px 0 0; opacity:0.8;"></div>
-        <div style="position:absolute; bottom:40px; left:200px; width:40px; height:80px; background:#00A800; border:2px solid #000; border-bottom:none;"></div>
-        <!-- Floor -->
-        <div style="position:absolute; bottom:0; left:0; width:100%; height:40px; background:#F8D8A0; border-top:4px solid #000; display:flex;">
-          <!-- Shadow detail -->
-          <div style="width:100%; height:10px; background:rgba(0,0,0,0.1); margin-top:4px;"></div>
-        </div>
-        
-        <div id="mario-world" style="position:absolute; top:0; left:0; width:3000px; height:100%;">
-          <!-- Pipe -->
-          <div class="m-obs" data-x="800" data-w="50" data-h="60" style="position:absolute; bottom:40px; left:800px; width:50px; height:60px; background:#00A800; border:2px solid #000; border-radius:4px 4px 0 0;"></div>
-          <!-- Block -->
-          <div style="position:absolute; bottom:120px; left:400px; width:30px; height:30px; background:#F87800; border:2px solid #000;"></div>
-          <div style="position:absolute; bottom:120px; left:430px; width:30px; height:30px; background:#E8C000; border:2px solid #000; text-align:center; font-weight:bold; line-height:26px;">?</div>
-          
-          <!-- Flag -->
-          <div style="position:absolute; bottom:40px; left:2000px; width:4px; height:130px; background:#000;">
-            <div style="position:absolute; top:10px; right:0; width:40px; height:30px; background:#FFF; border:2px solid #000;"></div>
-          </div>
-        </div>
-        
-        <!-- Player -->
-        <div id="mario-player" style="position:absolute; bottom:40px; left:60px; width:30px; height:30px; background:#F83800; border:2px solid #000; border-radius:8px 8px 0 0; z-index:10; transition: transform 0.1s;">
-          <div style="position:absolute; top:6px; right:4px; width:10px; height:10px; background:#FFA000;"></div>
-        </div>
-        
-        <!-- Enemies -->
-        <div id="mario-enemies" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
+      <div style="width:100%; height:220px; border-radius:8px; border:4px solid #000; margin-bottom:var(--space-md); overflow:hidden;">
+        <canvas id="mario-canvas" width="600" height="220" style="width:100%; height:100%; background:#5C94FC; display:block;"></canvas>
       </div>
       
       <button class="btn btn-primary w-full mt-sm" id="mario-btn">SAUTER (Espace)</button>
     `;
     gameArea.appendChild(card);
 
-    const world = document.getElementById('mario-world');
-    const player = document.getElementById('mario-player');
-    const enemiesLayer = document.getElementById('mario-enemies');
-    
-    let playerY = 40;
-    let playerVy = 0;
-    const gravity = 0.8;
-    const jumpStrength = 14;
-    let isJumping = false;
-    let scrollX = 0;
-    const speed = 6;
+    const canvas = document.getElementById('mario-canvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    ctx.imageSmoothingEnabled = false;
+
+    // Constants & State
     let rafId;
     let gameState = 'playing'; // 'playing', 'win', 'lose'
+    let scrollX = 0;
+    const speed = 4.5; // Fixed pixels per frame scrolling
     
-    // Spawn 2 goombas
-    let goombas = [
-      { x: 500, y: 40, w: 30, h: 30, el: null, active: true },
-      { x: 1200, y: 40, w: 30, h: 30, el: null, active: true }
+    // Physics tuned for Canvas
+    const gravity = 0.6;
+    const jumpForce = -10;
+    const floorY = 180;
+    
+    const player = {
+      x: 100, // Fixed screen position X
+      y: floorY - 30, // Start on floor
+      w: 30,
+      h: 30,
+      vy: 0,
+      isJumping: false,
+      color: '#F83800', // Mario red
+      hat: '#FFA000',
+      deadRotation: 0
+    };
+    
+    const goombas = [
+      { x: 500, y: floorY - 30, w: 30, h: 30, active: true, vy: 0 },
+      { x: 1200, y: floorY - 30, w: 30, h: 30, active: true, vy: 0 }
     ];
-    
-    goombas.forEach(g => {
-      g.el = document.createElement('div');
-      g.el.style.position = 'absolute';
-      g.el.style.bottom = g.y + 'px';
-      g.el.style.width = g.w + 'px';
-      g.el.style.height = g.h + 'px';
-      g.el.style.background = '#800000'; // dark brown
-      g.el.style.borderRadius = '50% 50% 0 0';
-      g.el.style.border = '2px solid #000';
-      enemiesLayer.appendChild(g.el);
-    });
     
     const obstacles = [
       { x: 800, w: 50, h: 60 } // The pipe
     ];
 
     function jump() {
-      if (!isJumping && gameState === 'playing' && canAnswer) {
-        isJumping = true;
-        playerVy = jumpStrength;
-        Sound.swoosh(); // jump sound
+      if (!player.isJumping && gameState === 'playing' && canAnswer) {
+        player.isJumping = true;
+        player.vy = jumpForce;
+        Sound.swoosh();
       }
     }
 
@@ -2457,112 +2429,167 @@
     };
     document.addEventListener('keydown', keyHandler);
 
-    function loop() {
-      if (!canAnswer) return;
+    function draw() {
+      // Background Sky
+      ctx.fillStyle = '#5C94FC';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Floor
+      ctx.fillStyle = '#F8D8A0';
+      ctx.fillRect(0, floorY, canvas.width, canvas.height - floorY);
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, floorY, canvas.width, 4); // top border
+      ctx.fillStyle = 'rgba(0,0,0,0.1)';
+      ctx.fillRect(0, floorY + 8, canvas.width, 10); // shadow detail
+      
+      // Scenery: clouds/bushes
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.fillRect(200 - (scrollX * 0.2) % 600, 50, 60, 30);
+      ctx.fillRect(500 - (scrollX * 0.2) % 600, 80, 40, 20);
+      
+      // Obstacles
+      for (let obs of obstacles) {
+        const screenX = obs.x - scrollX;
+        if (screenX + obs.w > -100 && screenX < canvas.width + 100) {
+          ctx.fillStyle = '#00A800';
+          ctx.fillRect(screenX, floorY - obs.h, obs.w, obs.h);
+          ctx.strokeStyle = '#000';
+          ctx.lineWidth = 4;
+          ctx.strokeRect(screenX, floorY - obs.h, obs.w, obs.h);
+          // Pipe lip
+          ctx.fillRect(screenX - 4, floorY - obs.h, obs.w + 8, 16);
+          ctx.strokeRect(screenX - 4, floorY - obs.h, obs.w + 8, 16);
+          // Pipe highlight
+          ctx.fillStyle = 'rgba(255,255,255,0.4)';
+          ctx.fillRect(screenX + 6, floorY - obs.h + 18, 8, obs.h - 18);
+        }
+      }
+      
+      // Flag
+      const flagX = 2000 - scrollX;
+      if (flagX > -100 && flagX < canvas.width + 100) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(flagX, floorY - 130, 6, 130); // pole
+        ctx.fillStyle = '#FFF';
+        ctx.fillRect(flagX + 6, floorY - 130 + 10, 40, 30); // flag
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(flagX + 6, floorY - 130 + 10, 40, 30);
+      }
+      
+      // Goombas
+      for (let g of goombas) {
+        if (!g.active) continue;
+        const screenX = g.x - scrollX;
+        if (screenX + g.w > -50 && screenX < canvas.width + 50) {
+          ctx.fillStyle = '#800000';
+          ctx.beginPath();
+          ctx.arc(screenX + g.w/2, g.y + g.h, g.w/2, Math.PI, 0);
+          ctx.lineTo(screenX + g.w, g.y + g.h);
+          ctx.lineTo(screenX, g.y + g.h);
+          ctx.fill();
+          ctx.strokeStyle = '#000';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          // Eyes
+          ctx.fillStyle = '#FFF';
+          ctx.fillRect(screenX + 6, g.y + 10, 6, 8);
+          ctx.fillRect(screenX + 18, g.y + 10, 6, 8);
+        }
+      }
+      
+      // Player
+      ctx.save();
+      ctx.translate(player.x + player.w/2, player.y + player.h/2);
+      if (gameState === 'lose') {
+        player.deadRotation += 0.2;
+        ctx.rotate(player.deadRotation);
+      }
+      ctx.fillStyle = player.color;
+      ctx.fillRect(-player.w/2, -player.h/2, player.w, player.h);
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-player.w/2, -player.h/2, player.w, player.h);
+      // Hat/Details
+      ctx.fillStyle = player.hat;
+      ctx.fillRect(-player.w/2 + 10, -player.h/2 + 4, 12, 8);
+      // Eye
+      ctx.fillStyle = '#FFF';
+      ctx.fillRect(-player.w/2 + 20, -player.h/2 + 10, 4, 6);
+      ctx.restore();
+    }
 
+    function update() {
       if (gameState === 'playing') {
         scrollX += speed;
-        world.style.transform = `translateX(${-scrollX}px)`;
-
-        const pStart = 60; // Player stays at x=60 visually on screen
-        const pEnd = 90;
-        const pWorldStart = pStart + scrollX;
-        const pWorldEnd = pEnd + scrollX;
-
-        // Gravity physics
-        if (isJumping) {
-          playerY += playerVy;
-          playerVy -= gravity;
-          
-          let onPipe = false;
-          let hitPipeSide = false;
-          
-          for (let obs of obstacles) {
-            // Check intersection
-            if (pWorldEnd > obs.x && pWorldStart < obs.x + obs.w) {
-              if (playerY >= 40 + obs.h && playerVy < 0) {
-                // Landing on pipe
-                playerY = 40 + obs.h;
-                playerVy = 0;
-                isJumping = false;
-                onPipe = true;
-              } else if (playerY < 40 + obs.h) {
-                // Hit the side of the pipe
-                hitPipeSide = true;
-              }
+        const pWorldX = player.x + scrollX;
+        
+        player.vy += gravity;
+        player.y += player.vy;
+        
+        let onGround = false;
+        let hitSide = false;
+        
+        // Obstacles collision (AABB)
+        for (let obs of obstacles) {
+          // Horizontal overlap
+          if (pWorldX + player.w > obs.x && pWorldX < obs.x + obs.w) {
+            // Check vertical
+            if (player.y + player.h <= floorY - obs.h + 15 && player.vy >= 0) {
+              // Landing on top
+              player.y = floorY - obs.h - player.h;
+              player.vy = 0;
+              onGround = true;
+            } else if (player.y + player.h > floorY - obs.h) {
+              // Hit the side
+              hitSide = true;
             }
-          }
-          
-          if (hitPipeSide) {
-            gameState = 'lose';
-          }
-          
-          if (!onPipe && playerY <= 40) {
-            // Landed on ground
-            playerY = 40;
-            playerVy = 0;
-            isJumping = false;
-          }
-        } else {
-          // Walk off pipe?
-          let onPipe = false;
-          let hitPipeSide = false;
-          for (let obs of obstacles) {
-            if (pWorldEnd > obs.x && pWorldStart < obs.x + obs.w) {
-              if (playerY >= 40 + obs.h) onPipe = true;
-              else hitPipeSide = true;
-            }
-          }
-          if (hitPipeSide) {
-             gameState = 'lose';
-          }
-          if (!onPipe && playerY > 40) {
-            // Falling
-            isJumping = true;
-            playerVy = -gravity;
           }
         }
-
+        
+        if (hitSide) {
+          gameState = 'lose';
+          player.vy = -8; // death bounce
+        }
+        
+        // Floor collision
+        if (!onGround && player.y + player.h >= floorY) {
+          player.y = floorY - player.h;
+          player.vy = 0;
+          onGround = true;
+        }
+        
+        player.isJumping = !onGround;
+        
         // Enemies update
-        goombas.forEach(g => {
-          if (!g.active) return;
-          // Goomba moves left relative to world
-          g.x -= 2; 
-          // Position visually (g.x is world coordinate, minus scrollX is screen coordinate)
-          const screenX = g.x - scrollX;
-          g.el.style.left = screenX + 'px';
+        for (let g of goombas) {
+          if (!g.active) continue;
+          g.x -= 1.2; // Walk left
           
-          // Collision Check
-          if (screenX < pEnd && screenX + g.w > pStart) {
-            // Horizontal overlap
-            if (playerY < g.y + g.h && playerY + 30 > g.y) {
-              if (playerVy < -2 && playerY > g.y + 10) {
-                // Stomp!
-                g.active = false;
-                g.el.style.transform = 'scaleY(0.2)';
-                playerVy = 10; // bounce
-                Sound.click();
-              } else {
-                // Hit!
-                gameState = 'lose';
-              }
+          // Player vs Goomba collision
+          if (pWorldX + player.w > g.x && pWorldX < g.x + g.w) {
+            if (player.y + player.h < g.y + 20 && player.vy > 0) {
+              // Stomp
+              g.active = false;
+              player.vy = -9; // bounce
+              Sound.click();
+            } else if (player.y + player.h > g.y + 10) {
+              // Hit
+              gameState = 'lose';
+              player.vy = -8;
             }
           }
-        });
-
-        player.style.bottom = playerY + 'px';
-
-        // Check Win Condition (reach the flag at x=2000)
-        if (pWorldEnd >= 2000) {
+        }
+        
+        // Win
+        if (pWorldX >= 2000) {
           gameState = 'win';
         }
-
+        
       } else if (gameState === 'lose') {
-        playerY += playerVy;
-        playerVy -= gravity;
-        player.style.bottom = playerY + 'px';
-        player.style.transform = 'rotate(180deg)';
-        if (playerY < -50) {
+        player.vy += gravity;
+        player.y += player.vy;
+        if (player.y > 600) {
           canAnswer = false;
           cancelAnimationFrame(rafId);
           Sound.wrong();
@@ -2576,12 +2603,19 @@
         onMiniGameEnd(mg.maxPts);
         return;
       }
-
-      rafId = requestAnimationFrame(loop);
     }
 
+    function loop() {
+      if (!canAnswer) return;
+      update();
+      draw();
+      rafId = requestAnimationFrame(loop);
+    }
+    
+    // Start engine
     rafId = requestAnimationFrame(loop);
 
+    // Timeout cleanup
     setTimeout(() => {
       document.removeEventListener('keydown', keyHandler);
       cancelAnimationFrame(rafId);
