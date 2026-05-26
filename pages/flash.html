@@ -482,8 +482,8 @@
   // ─── MINI-GAME 1: SPOT IT ─────────────────────────────────────
   function buildSpot(mg, time) {
     const base = randomColor(settings.difficulty);
-    // Generate odd one out: slightly shifted
-    const deltaTarget = settings.difficulty === 'easy' ? 15 : settings.difficulty === 'hard' ? 4 : 8;
+    // Generate odd one out: delta is larger so it's humanly visible
+    const deltaTarget = settings.difficulty === 'easy' ? 40 : settings.difficulty === 'hard' ? 15 : 25;
     const oddIdx = Math.floor(Math.random() * 9);
 
     const card = document.createElement('div');
@@ -592,7 +592,12 @@
   function buildHex(mg, time) {
     const target = randomColor(settings.difficulty);
     const hex = rgbToHex(target).toUpperCase();
-    let phase = 'show'; // show → hidden → input
+    
+    // Generate 3 wrong hexes
+    const wrong1 = rgbToHex(randomColor(settings.difficulty)).toUpperCase();
+    const wrong2 = rgbToHex(randomColor(settings.difficulty)).toUpperCase();
+    const wrong3 = rgbToHex(randomColor(settings.difficulty)).toUpperCase();
+    const options = [hex, wrong1, wrong2, wrong3].sort(() => Math.random() - 0.5);
 
     const card = document.createElement('div');
     card.className = 'mini-card';
@@ -614,11 +619,32 @@
         <div class="text-center text-secondary text-sm" id="show-countdown">Mémorise dans <strong id="sc">3</strong>s…</div>
       </div>
       <div id="hex-input-phase" style="display:none">
-        <input type="text" class="input input-mono mt-lg" id="hex-recall" placeholder="#??????" maxlength="7" autocomplete="off">
-        <button class="btn btn-primary w-full mt-md" id="hex-submit">VALIDER</button>
+        <div class="spot-grid" id="hex-choices" style="grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px;"></div>
       </div>
     `;
     gameArea.appendChild(card);
+
+    const container = document.getElementById('hex-choices');
+    options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = opt;
+      btn.style.fontFamily = 'Space Mono, monospace';
+      btn.addEventListener('click', () => {
+        if (!canAnswer) return;
+        canAnswer = false;
+        const isCorrect = opt === hex;
+        btn.classList.add(isCorrect ? 'correct' : 'wrong');
+        if (!isCorrect) {
+          container.querySelectorAll('.choice-btn').forEach(b => {
+            if (b.textContent === hex) b.classList.add('correct');
+          });
+        }
+        if (isCorrect) { Sound.good(); onMiniGameEnd(mg.maxPts); }
+        else { Sound.wrong(); onMiniGameEnd(0); }
+      });
+      container.appendChild(btn);
+    });
 
     // Countdown before hiding
     let countdown = 3;
@@ -632,23 +658,10 @@
         clearInterval(showTimer);
         document.getElementById('hex-show-phase').style.display = 'none';
         document.getElementById('hex-input-phase').style.display = 'block';
-        document.getElementById('hex-instruction').textContent = 'Retape le code HEX de mémoire !';
-        document.getElementById('hex-recall').focus();
+        document.getElementById('hex-instruction').textContent = 'Quel était le code HEX ?';
         startTimer(time);
       }
     }, 1000);
-
-    document.getElementById('hex-submit').addEventListener('click', () => {
-      if (!canAnswer) return;
-      let val = document.getElementById('hex-recall').value.trim();
-      if (!val.startsWith('#')) val = '#' + val;
-      const userRgb = hexToRgb(val);
-      if (!userRgb) { showToast('HEX invalide', 'error'); return; }
-      canAnswer = false;
-      const { score } = computeScore(target, userRgb, mg.maxPts);
-      if (score >= mg.maxPts * 0.8) Sound.good(); else Sound.wrong();
-      onMiniGameEnd(score);
-    });
   }
 
   // ─── MINI-GAME 4: RGB SNAP ────────────────────────────────────
@@ -876,6 +889,7 @@
   // ─── MINI-GAME 8: PERFECT MATCH ──────────────────────────────
   function buildMatch(mg, time) {
     const target = randomColor(settings.difficulty);
+    let current = { r: 128, g: 128, b: 128 };
 
     const card = document.createElement('div');
     card.className = 'mini-card';
@@ -886,29 +900,65 @@
           <div class="mini-game-title">${mg.icon} ${mg.name}</div>
         </div>
       </div>
-      <p class="text-sm text-secondary mb-md">Reproduis cette couleur le plus précisément possible !</p>
-      <div style="display:flex;justify-content:center;margin-bottom:12px">
-        <div style="background:${getSwatchBgColor()};padding:12px;border-radius:10px">
-          <div style="width:120px;height:70px;background:rgb(${target.r},${target.g},${target.b});border-radius:8px"></div>
+      <p class="text-sm text-secondary mb-md">Mélange les couleurs pour reproduire la cible !</p>
+      <div style="display:flex; justify-content:space-around; align-items:center; margin-bottom:16px">
+        <div style="text-align:center;">
+          <div style="width:100px;height:60px;background:rgb(${target.r},${target.g},${target.b});border-radius:8px; border:2px solid #000;"></div>
+          <span class="text-xs font-mono mt-xs block">CIBLE</span>
+        </div>
+        <div style="text-align:center;">
+          <div id="pm-user-color" style="width:100px;height:60px;background:rgb(128,128,128);border-radius:8px; border:2px solid #000;"></div>
+          <span class="text-xs font-mono mt-xs block">TOI</span>
         </div>
       </div>
-      <div class="pm-input-wrap">
-        <input type="text" class="input input-mono" id="pm-hex" placeholder="#HEX (ex: #FF5733)" maxlength="7" autocomplete="off">
+      
+      <div class="pm-sliders" style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="color:#FF3B30; font-weight:bold; width:15px;">R</span>
+          <input type="range" id="pm-r" class="input w-full" min="0" max="255" value="128">
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="color:#34C759; font-weight:bold; width:15px;">G</span>
+          <input type="range" id="pm-g" class="input w-full" min="0" max="255" value="128">
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="color:#007AFF; font-weight:bold; width:15px;">B</span>
+          <input type="range" id="pm-b" class="input w-full" min="0" max="255" value="128">
+        </div>
       </div>
-      <button class="btn btn-primary w-full mt-md" id="pm-submit">VALIDER</button>
+      
+      <button class="btn btn-primary w-full" id="pm-submit">VALIDER</button>
     `;
     gameArea.appendChild(card);
 
+    const box = document.getElementById('pm-user-color');
+    const sr = document.getElementById('pm-r');
+    const sg = document.getElementById('pm-g');
+    const sb = document.getElementById('pm-b');
+
+    function updateColor() {
+      current.r = parseInt(sr.value);
+      current.g = parseInt(sg.value);
+      current.b = parseInt(sb.value);
+      box.style.background = `rgb(${current.r},${current.g},${current.b})`;
+    }
+
+    sr.addEventListener('input', updateColor);
+    sg.addEventListener('input', updateColor);
+    sb.addEventListener('input', updateColor);
+
     document.getElementById('pm-submit').addEventListener('click', () => {
       if (!canAnswer) return;
-      let val = document.getElementById('pm-hex').value.trim();
-      if (!val.startsWith('#')) val = '#' + val;
-      const userRgb = hexToRgb(val);
-      if (!userRgb) { showToast('HEX invalide !', 'error'); return; }
       canAnswer = false;
-      const { score } = computeScore(target, userRgb, mg.maxPts);
-      if (score >= mg.maxPts * 0.8) Sound.good(); else Sound.wrong();
-      onMiniGameEnd(score);
+      const { score } = computeScore(target, current, mg.maxPts);
+      // Tolerance for win: need at least 60% accuracy for a fast-paced game
+      if (score >= mg.maxPts * 0.6) {
+        Sound.good(); 
+        onMiniGameEnd(score);
+      } else {
+        Sound.wrong(); 
+        onMiniGameEnd(0);
+      }
     });
   }
 
