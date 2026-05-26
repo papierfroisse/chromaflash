@@ -59,6 +59,7 @@
   let secondsLeft = 0;
   let canAnswer = true;
   let lives = 3;
+  let gameSequence = [];
 
   const gameArea = document.getElementById('game-area');
   const timerFill = document.getElementById('timer-fill');
@@ -81,6 +82,24 @@
     mgIndex = 0; totalPts = 0; gameScores = [];
     lives = 3;
     updateLives();
+    
+    // Shuffle games but keep bosses at specific intervals
+    const normals = MINI_GAMES.filter(g => g.id !== 'boss');
+    const bosses = MINI_GAMES.filter(g => g.id === 'boss');
+    normals.sort(() => Math.random() - 0.5);
+    
+    gameSequence = [];
+    let nIdx = 0, bIdx = 0;
+    for (let i = 1; i <= normals.length + bosses.length; i++) {
+      if (i % 10 === 0 && bIdx < bosses.length) {
+        gameSequence.push(bosses[bIdx++]);
+      } else if (nIdx < normals.length) {
+        gameSequence.push(normals[nIdx++]);
+      } else if (bIdx < bosses.length) {
+        gameSequence.push(bosses[bIdx++]);
+      }
+    }
+
     document.getElementById('final-screen').classList.remove('show');
     gameArea.style.display = 'flex';
     showTransition(0, () => playMiniGame(0));
@@ -95,8 +114,8 @@
 
     scoreEl.style.display = 'none';
     numEl.textContent = idx + 1;
-    nameEl.textContent = MINI_GAMES[idx].icon + ' ' + MINI_GAMES[idx].name;
-    verbEl.textContent = MINI_GAMES[idx].verb || 'GO !';
+    nameEl.textContent = gameSequence[idx].icon + ' ' + gameSequence[idx].name;
+    verbEl.textContent = gameSequence[idx].verb || 'GO !';
 
     // If previous score
     if (idx > 0 && gameScores[idx-1] !== undefined) {
@@ -106,7 +125,7 @@
 
     overlay.classList.add('show');
     Sound.swoosh();
-    Sound.speakVerb(MINI_GAMES[idx].verb || 'GO');
+    Sound.speakVerb(gameSequence[idx].verb || 'GO');
     
     setTimeout(() => {
       overlay.classList.remove('show');
@@ -115,15 +134,16 @@
   }
 
   function playMiniGame(idx) {
-    if (idx >= MINI_GAMES.length) { showFinal(); return; }
-    const mg = MINI_GAMES[idx];
-    progressFill.style.width = `${((idx) / MINI_GAMES.length) * 100}%`;
-    progressLabel.textContent = `${idx+1}/${MINI_GAMES.length}`;
+    if (idx >= gameSequence.length) { showFinal(); return; }
+    const mg = gameSequence[idx];
+    progressFill.style.width = `${((idx) / gameSequence.length) * 100}%`;
+    progressLabel.textContent = `${idx+1}/${gameSequence.length}`;
     canAnswer = true;
 
-    // Speed scales with index
+    // Speed scales with index + Beta Multiplier
+    const BETA_TIME_MULTIPLIER = 1.5;
     const timeScale = Math.max(0.6, 1 - idx * 0.05);
-    const time = Math.round(mg.time * timeScale);
+    const time = Math.round(mg.time * timeScale * BETA_TIME_MULTIPLIER);
 
     // Build mini game
     gameArea.innerHTML = '';
@@ -189,7 +209,7 @@
 
   function onMiniGameEnd(score) {
     clearInterval(timerInterval);
-    const mg = MINI_GAMES[mgIndex];
+    const mg = gameSequence[mgIndex];
     gameScores.push(score);
     totalPts += score;
     animateCounter(totalPtsEl, totalPts - score, totalPts, 400);
@@ -219,7 +239,7 @@
     mgIndex++;
 
     setTimeout(() => {
-      if (mgIndex < MINI_GAMES.length) {
+      if (mgIndex < gameSequence.length) {
         showTransition(mgIndex, () => playMiniGame(mgIndex));
       } else {
         Sound.stopBGM();
@@ -998,7 +1018,7 @@
     const finalScreen = document.getElementById('final-screen');
     finalScreen.classList.add('show');
 
-    const max = MINI_GAMES.reduce((s, m) => s + m.maxPts, 0);
+    const max = gameSequence.reduce((s, m) => s + m.maxPts, 0);
     const pct = totalPts / max;
     document.getElementById('final-max').textContent = `/ ${max.toLocaleString()}`;
 
@@ -1021,7 +1041,8 @@
 
     // Scores list
     const list = document.getElementById('mg-scores-list');
-    MINI_GAMES.forEach((mg, i) => {
+    list.innerHTML = '';
+    gameSequence.forEach((mg, i) => {
       const row = document.createElement('div');
       row.className = 'mg-score-row';
       const score = gameScores[i] ?? 0;
